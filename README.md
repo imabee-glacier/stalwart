@@ -155,51 +155,6 @@ Install Stalwart on your server by following the instructions for your platform:
 
 All documentation is available at [stalw.art/docs](https://stalw.art/docs/install/get-started).
 
-## Where do I get support?
-
-If you run into a problem, find a bug or have a question, head to the [Stalwart Support Portal](https://support.stalw.art). It is free for everyone, and our team answers.
-
-All server features are available under the AGPL-3.0-only license. No activation,
-license key, subscription, expiry date, or licensed account limit is required.
-All features are included in every build. Storage backends remain selectable
-through their normal Cargo features.
-
-The matching Webadmin source lives in [`webui/`](webui/README.md) and its built
-bundle is embedded in the server. The old default dashboard download URL is
-upgraded to that bundled version, including when an older bundle is cached.
-Custom application URLs keep their configured behavior.
-
-The account API returns permissions and locale without an edition marker.
-Branding settings use `Branding` / `sysBrandingGet` / `sysBrandingUpdate`; their
-stored object and permission IDs are preserved. Old activation credentials are
-read only to decode existing records and are discarded when those records are
-rewritten. Configuration migration imports branding without importing keys.
-Legacy reduced-feature database layouts still require data migration; their
-storage-format validation remains in place.
-
-
-## How can I contribute?
-
-Contributions are welcome, with a few rules that keep the project maintainable:
-
-- Because of the high volume of low-quality, AI-generated submissions, only vouched contributors can open pull requests. To be added to the list, post at [support.stalw.art](https://support.stalw.art) describing the change you would like to submit, with a link to it.
-- For now, only bug fixes and translations are accepted. New features are not, unless they are just a few lines of code.
-
-The full guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md). You can also help without writing code: report bugs, answer questions on the support portal, or tell others about Stalwart.
-
-## Funding
-
-Part of the development of this project was funded through:
-
-- [NGI0 Entrust Fund](https://nlnet.nl/entrust), a fund established by [NLnet](https://nlnet.nl/) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu/) programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 101069594.
-- [NGI Zero Core](https://nlnet.nl/NGI0/), a fund established by [NLnet](https://nlnet.nl/) with financial support from the European Commission's programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 101092990.
-
-## License
-
-This project is licensed under the [GNU Affero General Public License v3.0](./LICENSES/AGPL-3.0-only.txt). Third-party components retain the licenses identified in their files.
-
-Each file in this project contains a license notice at the top, indicating the applicable license(s). The license notice follows the [REUSE guidelines](https://reuse.software/) to ensure clarity and consistency. The full text of each license is available in the [LICENSES](./LICENSES/) directory.
-
 ## Copyright
 
 Copyright (C) 2020, Stalwart Labs LLC
