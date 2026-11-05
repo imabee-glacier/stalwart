@@ -484,8 +484,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Must run before artifacts are downloaded — checkout cleans the workspace.
-      - name: Checkout (for CHANGELOG)
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Checkout (for CHANGELOG and installer)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
@@ -517,10 +516,16 @@ jobs:
             )
           done
 
+      - name: Add installer
+        run: |
+          set -eu
+          mkdir -p archive/installer
+          install -m 0644 install.sh archive/installer/install.sh
+
       - name: Checksums
         run: |
           set -eu
-          find archive -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print0 |
+          find archive -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name 'install.sh' \) -print0 |
             while IFS= read -r -d '' file; do
               (cd "$(dirname "$file")" && sha256sum "$(basename "$file")" > "$(basename "$file").sha256")
             done
@@ -532,6 +537,7 @@ jobs:
           subject-path: |
             archive/**/*.tar.gz
             archive/**/*.zip
+            archive/installer/install.sh
 
       - name: Use cosign to sign existing artifacts
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
@@ -539,6 +545,7 @@ jobs:
           inputs: |
             archive/**/*.tar.gz
             archive/**/*.zip
+            archive/installer/install.sh
 
       - name: Build release body
         run: |
@@ -562,6 +569,7 @@ jobs:
             archive/**/*.zip
             archive/**/*.sigstore.json
             archive/**/*.sha256
+            archive/installer/install.sh
           prerelease: ${{!startsWith(github.ref, 'refs/tags/') || null}}
           tag_name: ${{!startsWith(github.ref, 'refs/tags/') && 'nightly' || null}}
           # Tag-push releases are created as drafts; the `publish` job un-drafts

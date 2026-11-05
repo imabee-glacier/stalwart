@@ -60,3 +60,16 @@ class DistributionPolicyTests(unittest.TestCase):
                 if action.startswith('./'):
                     continue
                 self.assertRegex(action, r'@[0-9a-f]{40}$', f'{workflow.name}: {action}')
+
+    def test_documented_installer_is_this_projects(self):
+        # GitHub Pages serves install.sh from main at the CNAME domain, as upstream does.
+        self.assertEqual((ROOT / 'CNAME').read_text().strip(), 'get.imabee.com')
+        command = "curl --proto '=https' --tlsv1.2 -sSf https://get.imabee.com/install.sh -o install.sh"
+        for document in ['README.md', 'INSTALL.md']:
+            text = (ROOT / document).read_text()
+            self.assertIn(command, text, document)
+            self.assertIn('sudo sh install.sh', text, document)
+            self.assertNotIn('get.stalw.art', text, document)
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text()
+        self.assertIn('install -m 0644 install.sh archive/installer/install.sh', workflow)
+        self.assertGreaterEqual(workflow.count('archive/installer/install.sh'), 4)

