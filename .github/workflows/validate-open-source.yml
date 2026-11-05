@@ -1,0 +1,49 @@
+name: Validate server and bundled dashboard
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webui
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: webui/package-lock.json
+      - run: npm ci
+      - run: npm audit
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+      - run: git diff --exit-code -- ../resources/webui.zip
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: cargo fmt --all --check
+      - run: cargo check --workspace --all-targets --all-features
+      - run: cargo check --workspace --all-targets --no-default-features --features stalwart/sqlite,stalwart/postgres,stalwart/mysql
+      - run: cargo test -p registry --test open_source_branding -p common --test runtime_settings
+      - run: cargo test -p common --lib bundled_webadmin_tests
+      - run: cargo test --workspace --no-fail-fast
+      - run: python3 -m pip install requests
+      - run: python3 -m unittest discover -s resources/scripts/tests
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: webui/package-lock.json
+      - run: npm ci --prefix webui
+      - run: webui/node_modules/.bin/playwright install --with-deps chromium
+      - run: cargo build -p stalwart --no-default-features --features sqlite
+      - run: python3 resources/scripts/test_open_source_server.py --bootstrap
+      - run: python3 resources/scripts/test_open_source_server.py --browser

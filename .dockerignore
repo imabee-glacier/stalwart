@@ -1,0 +1,10 @@
+// Ignore everything
+*
+
+// Allow what is needed
+!crates
+!resources
+
+!.cargo
+!Cargo.lock
+!Cargo.toml
