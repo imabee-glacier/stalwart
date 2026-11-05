@@ -27,7 +27,9 @@ The script:
 4. Installs and starts a service: systemd, or an init.d script where systemd is
    absent (Linux), launchd (macOS) or rc.d (FreeBSD).
 
-It needs root, `curl` or `wget`, `tar`, and `sha256sum`, `shasum` or `openssl`.
+It needs root, `curl` or `wget`, `tar`, and `sha256sum`, `shasum` or `openssl`;
+on Linux also `useradd` and a supported service manager (see
+[Supported platforms](#supported-platforms)).
 
 ### Verifying the installer
 
@@ -103,8 +105,12 @@ describe changes that need action.
 | macOS    | Apple silicon, Intel                                  |
 | FreeBSD  | x86-64                                                |
 
-On Linux the script picks the musl build when the system C library is musl
-(for example Alpine), and the glibc build otherwise.
+On Linux the script needs systemd, or a Debian-style init.d system (Debian or
+Ubuntu without systemd, with `start-stop-daemon`, `update-rc.d` and the LSB init
+functions). It stops with an error before making changes on other init systems,
+such as Alpine's OpenRC: use the [Docker image](#docker) there, or unpack the
+musl release archive and write a service for your init system. The script picks
+the musl build when the system C library is musl, and the glibc build otherwise.
 
 ## Windows
 

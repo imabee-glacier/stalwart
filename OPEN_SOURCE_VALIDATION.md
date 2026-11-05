@@ -279,3 +279,22 @@ bundle check, actionlint and the SQLite build. The live server test passed in
 default, `--bootstrap`, `--browser` and `--passkeys` modes; it now also checks
 that app passwords and API keys are refused without, or with a wrong, current
 password, created with it, and cannot be created from an app password.
+
+## Installer end-to-end check (2026-11-05)
+
+`install.sh` was run as documented (fetched from `https://get.imabee.com`) against
+the published v1.0.4 release in disposable containers: Debian trixie with
+systemd, and Debian trixie and Ubuntu 24.04 with init.d. Each installed the
+checksum-verified binary, created the `stalwart` account, served the dashboard on
+port 8080, logged the bootstrap password, and survived a re-run.
+
+Fixed as a result:
+
+- TLS enforcement for downloads was skipped with curl 8, whose help text no
+  longer matched the detection, so archives were fetched without `--proto =https
+  --tlsv1.2`. Detection now matches both curl 7 and curl 8 wording.
+- On Linux without systemd, a missing `/etc/init.d` or LSB init functions made
+  the service setup fail while the script still reported success. The script now
+  checks for systemd or a Debian-style init.d system before changing anything,
+  and fails on other init systems such as Alpine's OpenRC with a pointer to the
+  Docker image.

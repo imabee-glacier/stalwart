@@ -52,6 +52,20 @@ main() {
         *)       err "❌ Install failed: Unsupported OS: $_uname" ;;
     esac
 
+    # Linux needs systemd or a Debian-style init.d system (for example Debian or
+    # Ubuntu without systemd). Fail before changing anything elsewhere.
+    if [ "$_os" = "linux" ]; then
+        need_cmd useradd
+        if ! check_cmd systemctl; then
+            local _initd_cmd
+            for _initd_cmd in start-stop-daemon update-rc.d service; do
+                check_cmd "$_initd_cmd" || err "❌ Install failed: No systemd, and '$_initd_cmd' is missing. The installer supports systemd and Debian-style init.d; on other systems (for example Alpine with OpenRC) use the Docker image or install the release archive manually."
+            done
+            [ -d /etc/init.d ] && [ -r /lib/lsb/init-functions ] && [ -r /lib/init/vars.sh ] \
+                || err "❌ Install failed: No systemd, and /etc/init.d, /lib/lsb/init-functions or /lib/init/vars.sh is missing (on Debian, install the 'initscripts' package; on Ubuntu, 'sysvinit-utils')."
+        fi
+    fi
+
     # Parse arguments
     local _component="stalwart"
     local _prefix=""
@@ -459,7 +473,7 @@ esac
 
 exit 0
 EOF
-    chmod +x /etc/init.d/stalwart
+    ensure chmod +x /etc/init.d/stalwart
     if [ -d /etc/logrotate.d ]; then
         cat > /etc/logrotate.d/stalwart <<EOF
 ${_log_dir}/stalwart.log {
@@ -474,7 +488,7 @@ ${_log_dir}/stalwart.log {
 }
 EOF
     fi
-    update-rc.d stalwart defaults
+    ensure update-rc.d stalwart defaults
     service stalwart restart
 }
 
@@ -1015,7 +1029,9 @@ check_help_for() {
     shift
 
     local _category
-    if "$_cmd" --help | grep -q 'For all options use the manual or "--help all".'; then
+    # curl 7.73+ lists most options only under "--help all"; the hint's wording
+    # changed in curl 8, so match the quoted argument rather than the sentence.
+    if "$_cmd" --help | grep -q '"--help all"'; then
       _category="all"
     else
       _category=""
