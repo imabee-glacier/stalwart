@@ -104,6 +104,9 @@ def main():
                     subprocess.run(['node', 'webui/tests/server-browser-smoke.mjs'], cwd=ROOT,
                                    env={**os.environ, 'STALWART_TEST_BASE_URL': base,
                                         'STALWART_TEST_AUTHORIZATION': authorization}, check=True)
+                # Runs last: the browser tests expect their users to be the first accounts.
+                if not args.bootstrap:
+                    check_credential_step_up(base, authorization)
             except Exception:
                 log.flush()
                 print((work / 'server.log').read_text())
@@ -115,6 +118,51 @@ def main():
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
+
+
+def check_credential_step_up(base, admin_authorization):
+    """App passwords and API keys can only be minted with the caller's current password."""
+    def call(authorization, path, body=None):
+        req = urllib.request.Request(base + path, headers={'Authorization': authorization,
+                                                           'Content-Type': 'application/json'},
+                                     data=None if body is None else json.dumps(body).encode())
+        with urllib.request.urlopen(req, timeout=10) as response:
+            return json.loads(response.read())
+
+    def create(authorization, object_type, value):
+        session = call(authorization, '/jmap/session')
+        account_id = session['primaryAccounts'].get('urn:stalwart:jmap') or next(iter(session['accounts']))
+        response = call(authorization, '/jmap', {
+            'using': ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'],
+            'methodCalls': [[f'x:{object_type}/set', {'accountId': account_id, 'create': {'new': value}}, 'c']]})
+        return response['methodResponses'][0][1]
+
+    domain = create(admin_authorization, 'Domain', {'name': 'stepup.test'})['created']['new']['id']
+    password = secrets.token_urlsafe(24)
+    permissions = {name: True for name in [
+        'authenticate', 'sysAppPasswordCreate', 'sysAppPasswordGet', 'sysAppPasswordQuery',
+        'sysApiKeyCreate', 'sysApiKeyGet', 'sysApiKeyQuery']}
+    user = create(admin_authorization, 'Account', {
+        '@type': 'User', 'name': 'bob', 'domainId': domain,
+        'permissions': {'@type': 'Replace', 'enabledPermissions': permissions},
+        'credentials': {'0': {'@type': 'Password', 'secret': password}}})
+    assert 'new' in (user.get('created') or {}), user
+    authorization = 'Basic ' + base64.b64encode(('bob@stepup.test:' + password).encode()).decode()
+
+    for object_type in ['AppPassword', 'ApiKey']:
+        for extra in [{}, {'currentSecret': password + 'x'}]:
+            result = create(authorization, object_type, {'description': 'step-up check', **extra})
+            assert 'new' not in (result.get('created') or {}), result
+            assert result['notCreated']['new']['type'] == 'forbidden', result
+        result = create(authorization, object_type, {'description': 'step-up check', 'currentSecret': password})
+        created = (result.get('created') or {}).get('new')
+        assert created and created.get('secret') and 'currentSecret' not in created, result
+        secondary = 'Basic ' + base64.b64encode(('bob@stepup.test:' + created['secret']).encode()).decode()
+        if object_type == 'AppPassword':
+            # A credential cannot be used to mint further credentials, even with the password.
+            result = create(secondary, object_type, {'description': 'chained', 'currentSecret': password})
+            assert result['notCreated']['new']['type'] == 'forbidden', result
+    print('PASS: app passwords and API keys require the current password', flush=True)
 
 
 if __name__ == '__main__':

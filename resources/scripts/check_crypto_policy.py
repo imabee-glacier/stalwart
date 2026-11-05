@@ -16,7 +16,7 @@ def validate(metadata, today=None):
     packages = {p['id']: p for p in metadata['packages']}
     nodes = metadata['resolve']['nodes']
     allowed = {
-        '0.9.10': {('common', '1.0.3'), ('mail-auth', '0.15.1')},
+        '0.9.10': {('common', '1.0.4'), ('mail-auth', '0.15.1')},
         '0.10.0-rc.19': {('crypto-glue', '0.2.2')},
     }
     for node in nodes:

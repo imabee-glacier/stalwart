@@ -123,6 +123,8 @@ main() {
     _tmp="$(mktemp -d)"
     _tar="${_tmp}/stalwart.tar.gz"
     ensure downloader "${BASE_URL}/${_component}-${_arch}.tar.gz" "$_tar" "$_arch"
+    ensure downloader "${BASE_URL}/${_component}-${_arch}.tar.gz.sha256" "${_tar}.sha256" "$_arch"
+    verify_sha256 "$_tar" "${_tar}.sha256"
     ensure tar zxf "$_tar" -C "$_tmp"
     _src_name="stalwart"
     if [ "$_component" = "stalwart-foundationdb" ]; then
@@ -872,6 +874,31 @@ need_cmd() {
 
 check_cmd() {
     command -v "$1" > /dev/null 2>&1
+}
+
+# Refuse to install an archive whose SHA-256 digest does not match the
+# checksum published alongside it in the release.
+verify_sha256() {
+    local _expected _actual
+    _expected="$(cut -d ' ' -f 1 < "$2" | tr -d '\r\n' | tr 'A-F' 'a-f')"
+    case "$_expected" in
+        *[!0-9a-f]* | "") err "Invalid checksum file for $(basename "$1")." ;;
+    esac
+    if [ "${#_expected}" -ne 64 ]; then
+        err "Invalid checksum file for $(basename "$1")."
+    fi
+    if check_cmd sha256sum; then
+        _actual="$(sha256sum "$1" | cut -d ' ' -f 1)"
+    elif check_cmd shasum; then
+        _actual="$(shasum -a 256 "$1" | cut -d ' ' -f 1)"
+    elif check_cmd openssl; then
+        _actual="$(openssl dgst -sha256 -r "$1" | cut -d ' ' -f 1)"
+    else
+        err "need 'sha256sum', 'shasum' or 'openssl' to verify the download"
+    fi
+    if [ "$_actual" != "$_expected" ]; then
+        err "Checksum mismatch for $(basename "$1"): refusing to install."
+    fi
 }
 
 assert_nz() {

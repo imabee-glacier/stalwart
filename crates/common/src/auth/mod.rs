@@ -1,4 +1,3 @@
-pub mod masked;
 /*
  * SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
  *
@@ -38,6 +37,7 @@ pub mod access_token;
 pub mod active_script;
 pub mod authentication;
 pub mod credential;
+pub mod masked;
 pub mod oauth;
 pub mod permissions;
 pub mod rate_limit;

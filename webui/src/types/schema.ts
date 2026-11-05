@@ -337,6 +337,8 @@ export interface Form {
 
 export interface FormSection {
     title?: string;
+    /** Shown only when creating an object: verification inputs that are never stored or read back. */
+    createOnly?: boolean;
     fields: FormField[];
 }
 

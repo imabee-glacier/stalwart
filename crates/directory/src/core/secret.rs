@@ -172,7 +172,14 @@ fn digest_matches(digest: &[u8], encoded: &str) -> bool {
         .encode_slice(digest, &mut buf)
         .ok()
         .and_then(|len| buf.get(..len))
-        .is_some_and(|expected| expected == encoded.as_bytes())
+        .is_some_and(|expected| secret_eq(expected, encoded.as_bytes()))
+}
+
+/// Compares secret material in constant time, so that response timing does not
+/// reveal how many leading bytes of a guess were correct.
+fn secret_eq(a: &[u8], b: &[u8]) -> bool {
+    use subtle::ConstantTimeEq;
+    a.ct_eq(b).into()
 }
 
 const MAX_ENCODED_DIGEST_LEN: usize = STANDARD.encoded_len(64);
@@ -215,7 +222,7 @@ pub async fn verify_secret_hash(
                     let mut hasher = Sha1::new();
                     hasher.update(secret);
                     hasher.update(salt);
-                    Ok(&hasher.finalize()[..] == hash)
+                    Ok(secret_eq(&hasher.finalize()[..], hash))
                 },
                 "SHA256" => {
                     let mut hasher = Sha256::new();
@@ -229,7 +236,7 @@ pub async fn verify_secret_hash(
                     let mut hasher = Sha256::new();
                     hasher.update(secret);
                     hasher.update(salt);
-                    Ok(&hasher.finalize()[..] == hash)
+                    Ok(secret_eq(&hasher.finalize()[..], hash))
                 },
                 "SHA512" => {
                     let mut hasher = Sha512::new();
@@ -243,7 +250,7 @@ pub async fn verify_secret_hash(
                     let mut hasher = Sha512::new();
                     hasher.update(secret);
                     hasher.update(salt);
-                    Ok(&hasher.finalize()[..] == hash)
+                    Ok(secret_eq(&hasher.finalize()[..], hash))
                 },
                 "MD5" => {
                     Ok(digest_matches(&md5::compute(secret)[..], hashed_secret))
@@ -258,10 +265,10 @@ pub async fn verify_secret_hash(
                     }
                 },
                 "PLAIN" => {
-                    Ok(hashed_secret.as_bytes() == secret)
+                    Ok(secret_eq(hashed_secret.as_bytes(), secret))
                 },
                 "CLEAR" => {
-                    Ok(hashed_secret.as_bytes() == secret)
+                    Ok(secret_eq(hashed_secret.as_bytes(), secret))
                 },
                 _ => {
                     Err(trc::AuthEvent::Error
@@ -273,7 +280,7 @@ pub async fn verify_secret_hash(
             Err(unrecognized_hash_format())
         }
     } else if !hashed_secret.is_empty() {
-        Ok(hashed_secret.as_bytes() == secret)
+        Ok(secret_eq(hashed_secret.as_bytes(), secret))
     } else {
         Ok(false)
     }

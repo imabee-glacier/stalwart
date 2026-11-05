@@ -170,7 +170,13 @@ fn effective_origin(
     incoming: &Url,
     remote_ip: std::net::IpAddr,
 ) -> trc::Result<Url> {
-    if incoming.scheme() == "http"
+    // Development exception: only for servers without a public origin. Behind a
+    // same-host reverse proxy every peer is loopback, so a configured public URL
+    // must never be overridden by a client-supplied `Host: localhost`.
+    let is_development_server = configured.is_empty()
+        || Url::parse(configured).is_ok_and(|url| url.host_str() == Some("localhost"));
+    if is_development_server
+        && incoming.scheme() == "http"
         && incoming.host_str() == Some("localhost")
         && remote_ip.is_loopback()
     {
@@ -765,6 +771,12 @@ mod tests {
                 ip
             )
             .is_err()
+        );
+        // A production origin is never replaced through a same-host proxy.
+        assert!(effective_origin("https://mail.example.org", &local, ip).is_err());
+        assert_eq!(
+            effective_origin("http://localhost:3000", &local, ip).unwrap(),
+            local
         );
     }
     #[test]

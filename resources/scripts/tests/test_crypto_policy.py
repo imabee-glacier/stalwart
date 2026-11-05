@@ -16,7 +16,7 @@ class CryptoPolicyTests(unittest.TestCase):
             'packages': [
                 {'id': 'rsa', 'name': 'rsa', 'version': version,
                  'source': 'registry+https://github.com/rust-lang/crates.io-index'},
-                {'id': 'parent', 'name': parent, 'version': '1.0.3'},
+                {'id': 'parent', 'name': parent, 'version': '1.0.4'},
             ],
             'resolve': {'nodes': [
                 {'id': 'rsa', 'features': [], 'dependencies': []},

@@ -18,7 +18,17 @@ impl RegistryStore {
 
         // Build store
         inner.store = match inner.read_data_store().await {
-            RegistryInit::Ok(data_store) => Store::build(data_store).await?,
+            RegistryInit::Ok(data_store) => {
+                if inner.env_recovery_admin.is_some() && !inner.env_recovery_mode {
+                    eprintln!();
+                    eprintln!("⚠️  STALWART_RECOVERY_ADMIN is set outside recovery mode.");
+                    eprintln!("   It grants full administrator access over every protocol and");
+                    eprintln!("   bypasses two-factor authentication. Remove it from the");
+                    eprintln!("   environment once you no longer need emergency access.");
+                    eprintln!();
+                }
+                Store::build(data_store).await?
+            }
             RegistryInit::Err(err) => return Err(err),
             RegistryInit::Bootstrap => {
                 inner.env_recovery_mode = true;

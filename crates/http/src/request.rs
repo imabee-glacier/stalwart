@@ -33,7 +33,9 @@ use common::{
         application::{AppClientDocument, Resource},
     },
     network::{
-        SessionData, SessionManager, SessionStream, forwarded::ClientIp, memory::MemoryClass,
+        SessionData, SessionManager, SessionStream,
+        forwarded::{ClientIp, is_trusted_proxy},
+        memory::MemoryClass,
     },
 };
 use compact_str::{CompactString, ToCompactString};
@@ -918,14 +920,29 @@ async fn handle_session<T: SessionStream>(inner: Arc<Inner>, session: SessionDat
                     let has_body = !req.body().is_end_stream();
 
                     let response = 'response: {
-                        // Obtain remote IP
-                        let remote_ip = match server
-                            .core
-                            .network
-                            .http
-                            .remote_ip_source
-                            .resolve(req.headers())
-                        {
+                        // Obtain remote IP. Forwarded headers count only from a
+                        // trusted proxy; anyone else could forge them.
+                        let http_config = &server.core.network.http;
+                        let client_ip = match http_config.remote_ip_source.resolve(req.headers()) {
+                            ClientIp::Forwarded(_) | ClientIp::Invalid
+                                if !is_trusted_proxy(
+                                    session.remote_ip,
+                                    &http_config.trusted_proxies,
+                                ) =>
+                            {
+                                trc::event!(
+                                    Http(trc::HttpEvent::XForwardedInvalid),
+                                    ListenerId = instance.id.clone(),
+                                    RemoteIp = session.remote_ip,
+                                    SpanId = session.session_id,
+                                    Reason =
+                                        "Forwarded header ignored: peer is not a trusted proxy",
+                                );
+                                ClientIp::Peer
+                            }
+                            client_ip => client_ip,
+                        };
+                        let remote_ip = match client_ip {
                             ClientIp::Peer => {
                                 trc::event!(
                                     Http(trc::HttpEvent::RequestUrl),

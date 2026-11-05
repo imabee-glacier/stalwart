@@ -132,7 +132,7 @@ function buildSearchIndex(
         const display = displayNameFor(viewName);
 
         for (const formSection of form.sections) {
-            if (formSection.title) {
+            if (formSection.title && !formSection.createOnly) {
                 entries.push({
                     text: formSection.title,
                     type: 'form',

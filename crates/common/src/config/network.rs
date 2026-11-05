@@ -26,6 +26,7 @@ use registry::schema::{
         SystemSettings, TaskManager,
     },
 };
+use registry::types::ipmask::IpAddrOrMask;
 use std::{str::FromStr, time::Duration};
 use utils::{map::vec_map::VecMap, memory::available_memory};
 
@@ -73,6 +74,9 @@ pub struct Http {
     pub allowed_endpoint: IfBlock,
     pub response_headers: Vec<(hyper::header::HeaderName, hyper::header::HeaderValue)>,
     pub remote_ip_source: RemoteIpSource,
+    /// Peers allowed to supply forwarded client addresses. When empty, only
+    /// non-public peers (loopback, private and link-local networks) are trusted.
+    pub trusted_proxies: Vec<IpAddrOrMask>,
     pub redirect_root: Option<String>,
 }
 
@@ -504,6 +508,7 @@ impl Http {
             },
             response_headers: http_headers,
             remote_ip_source: RemoteIpSource::new(http.client_ip_source, http.forwarded_hops),
+            trusted_proxies: http.trusted_proxies.as_slice().to_vec(),
             redirect_root: http.redirect_root,
         }
     }

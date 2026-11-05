@@ -1537,6 +1537,7 @@ impl EnumImpl for Property {
             b"trustContacts" => Property::TrustContacts,
             b"trustReplies" => Property::TrustReplies,
             b"trustedProvider" => Property::TrustedProvider,
+            b"trustedProxies" => Property::TrustedProxies,
             b"tsigAlgorithm" => Property::TsigAlgorithm,
             b"ttl" => Property::Ttl,
             b"uncertainBelow" => Property::UncertainBelow,
@@ -2836,6 +2837,7 @@ impl EnumImpl for Property {
             // SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
             // SPDX-License-Identifier: AGPL-3.0-only
             Property::TrustedProvider => "trustedProvider",
+            Property::TrustedProxies => "trustedProxies",
             // SPDX-SnippetEnd
             Property::TsigAlgorithm => "tsigAlgorithm",
             Property::Ttl => "ttl",
@@ -4155,6 +4157,7 @@ impl EnumImpl for Property {
             // SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
             // SPDX-License-Identifier: AGPL-3.0-only
             1056 => Some(Property::TrustedProvider),
+            1062 => Some(Property::TrustedProxies),
             // SPDX-SnippetEnd
             407 => Some(Property::TsigAlgorithm),
             359 => Some(Property::Ttl),
@@ -4225,7 +4228,7 @@ impl EnumImpl for Property {
         }
     }
 
-    const COUNT: usize = 1062;
+    const COUNT: usize = 1063;
 }
 
 impl serde::Serialize for Property {

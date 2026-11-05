@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.4] - 2026-11-05
+
+**POP3 has been removed.** The POP3 server, its listeners, autodiscovery and DNS records, OAuth scopes and permissions are gone. Existing POP3 listeners are skipped at startup with a warning and can no longer be saved; switch mail clients to IMAP or JMAP before upgrading.
+
+**Reverse proxies on public addresses must be listed in `trustedProxies`.** `X-Forwarded-For` and `Forwarded` headers are now honoured only when the connection comes from a trusted proxy. With `trustedProxies` empty, that means a loopback or private-network peer. A proxy reached over a public address must be listed in `Http` → `trustedProxies`; otherwise its headers are ignored and the proxy's own address is used for rate limiting, bans and logs.
+
+**Third-party apps that are not registered by an administrator lose the Stalwart account scopes.** Dynamically registered, stateless, client-metadata-document and tenant-registered OAuth clients can no longer request `urn:stalwart:oauth:scope:security`, `urn:stalwart:oauth:scope:settings` or `urn:stalwart:oauth:scope:full`. Existing grants holding those scopes are revoked at their next refresh. App passwords and API keys such clients already created stay valid until revoked, so review existing ones.
+
+**Licensing has been removed.** Every feature is available and configured through the ordinary settings and permissions. The branding settings are renamed to `Branding`, `sysBrandingGet` and `sysBrandingUpdate`, and the account API no longer reports an edition. Custom API clients that use either must be updated.
+
+## Added
+- Passkeys: sign in with passkeys on the hosted OAuth and device authorization pages, and manage them under Account → Credentials → Passkeys. See [PASSKEYS.md](PASSKEYS.md).
+- `Http` → `trustedProxies`: networks whose forwarded client-address headers are trusted.
+- The WebUI is built from the included `webui/` source and embedded in the server.
+- Releases publish a SHA-256 checksum for every archive, and `install.sh` refuses to install an archive whose checksum does not match.
+- Startup warns when `STALWART_RECOVERY_ADMIN` is left set outside recovery mode.
+
+## Changed
+- Licensing, activation and edition checks are removed; AI, masked addresses, branding, alerts, retention, templates and telemetry are ordinary settings.
+- POP3 is removed. Its storage identifiers stay reserved so existing databases still decode.
+- Creating an app password or API key requires the account's current password, and the one-time code when two-factor authentication is enabled. App passwords and API keys cannot create further credentials. The WebUI asks for these only when creating a credential and never stores them.
+- `install.sh` downloads this project's releases.
+- Container images are published to `ghcr.io/imabee-glacier/stalwart` only.
+- CI validates every release build, uses the checked-in lockfile and pins actions to commit hashes.
+
+## Fixed
+- Security: Forwarded client-address headers from untrusted peers are ignored and logged, so a client can no longer spoof its address to evade rate limits and bans or to impersonate an allow-listed address.
+- Security: Clients not registered by an administrator could obtain the Stalwart account scopes and create app passwords and API keys that outlive the grant.
+- Security: A masked address resolves only when its local part matches exactly and the domain is the masked address's own domain.
+- Security: Plaintext, SSHA and digest password comparisons run in constant time.
+- Security: The `http://localhost` passkey development origin is accepted only when the server's configured URL is itself localhost.
+- Security: Management API request bodies sent without credentials are capped at 64 KiB.
+- Dependencies: LZ4 decompression in the vendored Zenoh transport is updated to 0.14.0, and legacy Zenoh RSA authentication is disabled.
+
 ## [1.0.3] - 2026-11-04
 
 **Third-party apps (not the WebUI) need the new Stalwart OAuth scopes.** Apps signing in through Stalwart or an external OpenID Connect provider could not manage app passwords, API keys or account settings. This access is now granted by the scopes `urn:stalwart:oauth:scope:security`, `urn:stalwart:oauth:scope:settings` and `urn:stalwart:oauth:scope:full`:

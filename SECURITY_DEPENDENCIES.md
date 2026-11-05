@@ -29,7 +29,7 @@ remain supported. This is an intentional security-related compatibility change.
 
 The remaining RSA dependency paths were reviewed:
 
-- rsa 0.9.10 → common 1.0.3: local PEM/DER parsing and key conversion in
+- rsa 0.9.10 → common 1.0.4: local PEM/DER parsing and key conversion in
   `config/mod.rs` and public-key parsing in `network/dkim.rs`.
 - rsa 0.9.10 → mail-auth 0.15.1: local DKIM key generation and encoding.
   The selected mail signing backend is AWS-LC, and the RustCrypto signing backend

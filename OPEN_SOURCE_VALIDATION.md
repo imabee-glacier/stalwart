@@ -229,3 +229,53 @@ test suite, Python policy tests, cargo-audit and dashboard checks. The live
 server smoke test now also asserts that the served schema and account
 permissions contain no POP3 entries; `--bootstrap`, `--browser` and
 `--passkeys` all pass against the rebuilt SQLite binary.
+
+## Security hardening and v1.0.4 release (2026-11-05)
+
+A repository-wide audit found and fixed:
+
+- Forwarded client-address headers were honoured from any peer. They are now
+  trusted only from `Http` → `trustedProxies`, or from loopback and private
+  peers when that list is empty; other peers' headers are ignored and logged.
+  Legacy `Http` records decode with an empty list
+  (`crates/registry/tests/trusted_proxies.rs`).
+- Unverified OAuth clients (stateless, client-metadata-document and
+  tenant-registered) could obtain the Stalwart security, settings and full
+  scopes and mint credentials that outlive the grant. They are now limited to
+  the interoperable scopes; existing grants are revoked at their next refresh.
+- Creating an app password or API key now requires the caller's current
+  password and configured one-time code, verified through normal
+  authentication (so failures count toward abuse bans). Secondary credentials
+  cannot create credentials. The verification inputs are create-only schema
+  fields that the WebUI shows only when creating, never fetches, and the server
+  never stores.
+- Masked-address resolution requires an exact local part and the masked
+  address's own domain.
+- Plaintext, SSHA and digest secret comparisons use constant-time equality.
+- The passkey `http://localhost` development origin applies only when the
+  configured URL is itself localhost.
+- Management API bodies without credentials are capped at 64 KiB.
+- Startup warns when `STALWART_RECOVERY_ADMIN` is set outside recovery mode.
+- Release archives carry SHA-256 checksums that `install.sh` verifies before
+  extracting. Workflow actions are pinned to commit hashes. Policy tests guard
+  the checksum flow, the pins, and the absence of the `stalwart_tests` cfg
+  from release build configuration.
+
+The release follows upstream's process: one `v1.0.4` commit bumping every
+workspace crate, the lockfile and the changelog (`## [1.0.4]` with upgrade
+notes, Added, Changed and Fixed), tagged `v1.0.4`; the tag workflow builds a
+draft release from that changelog section and publishes it after every build
+job succeeds. The WebUI follows its own upstream versioning (2.0.5). Container
+images are published to GHCR only. The reviewed RSA exception now names
+`common` 1.0.4.
+
+Passed locally on the release tree: login asset and crypto policy checks,
+`cargo fmt`, all-features and SQLite/PostgreSQL/MySQL all-target checks, the
+branding/runtime/bundled-WebUI tests, the full workspace suite (80 test targets,
+no failures, including `crates/common/tests/security_hardening.rs`), the Zenoh
+coordinator and transport tests, cargo-audit, the Python policy tests, npm
+audit, typecheck, lint, Prettier, 14 Vitest tests, the dashboard build and
+bundle check, actionlint and the SQLite build. The live server test passed in
+default, `--bootstrap`, `--browser` and `--passkeys` modes; it now also checks
+that app passwords and API keys are refused without, or with a wrong, current
+password, created with it, and cannot be created from an app password.

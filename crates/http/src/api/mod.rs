@@ -55,6 +55,9 @@ pub trait ManagementApi: Sync + Send {
     ) -> impl Future<Output = trc::Result<AccessToken>> + Send;
 }
 
+const MAX_AUTHENTICATED_BODY: usize = 1024 * 1024;
+const MAX_ANONYMOUS_BODY: usize = 64 * 1024;
+
 impl ManagementApi for Server {
     #[allow(unused_variables)]
     async fn handle_api_request(
@@ -64,7 +67,14 @@ impl ManagementApi for Server {
     ) -> trc::Result<HttpResponse> {
         let is_post = req.method() == Method::POST;
         let body = if is_post {
-            fetch_body(req, 1024 * 1024, session.session_id).await
+            // Bodies are read before routing; unauthenticated callers can only
+            // reach the login and RSVP endpoints, whose payloads are small.
+            let max_size = if req.headers().contains_key(hyper::header::AUTHORIZATION) {
+                MAX_AUTHENTICATED_BODY
+            } else {
+                MAX_ANONYMOUS_BODY
+            };
+            fetch_body(req, max_size, session.session_id).await
         } else {
             None
         };

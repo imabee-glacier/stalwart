@@ -307,6 +307,7 @@ export function buildSections(form: Form | null, fields: Fields | null, mode: Fo
     }
     const sections: RenderableSection[] = [];
     form.sections.forEach((section, index) => {
+        if (section.createOnly && mode !== 'create') return;
         const rendered: RenderableField[] = [];
         for (const ff of section.fields) {
             if (ff.name === VARIANT_FIELD) {
@@ -326,6 +327,7 @@ export function collectFetchProperties(schema: Schema, view: ResolvedView, viewN
     const names = new Set<string>(['id']);
     const add = (form: Form | null | undefined) => {
         for (const section of form?.sections ?? []) {
+            if (section.createOnly) continue;
             for (const ff of section.fields) {
                 if (ff.name && ff.name !== VARIANT_FIELD) names.add(ff.name);
             }

@@ -1594,6 +1594,7 @@ pub enum Property {
     // SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
     // SPDX-License-Identifier: AGPL-3.0-only
     TrustedProvider = 1056,
+    TrustedProxies = 1062,
     // SPDX-SnippetEnd
     TsigAlgorithm = 407,
     Ttl = 359,

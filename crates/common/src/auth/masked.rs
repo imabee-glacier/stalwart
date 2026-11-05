@@ -10,6 +10,32 @@ use utils::snowflake::SnowflakeIdGenerator;
 
 pub struct MaskedAddress;
 
+impl crate::Server {
+    /// Whether a recipient is exactly the address stored for a masked email.
+    ///
+    /// The identifier in a masked address is only a lookup key: its checksum is
+    /// not secret and its creation time is predictable. Delivery therefore also
+    /// requires the full stored local part (prefix, identifier and expiry) and a
+    /// domain that resolves to the same domain record, including its aliases.
+    pub async fn masked_email_matches(
+        &self,
+        stored_email: &str,
+        local_part: &str,
+        domain_id: u32,
+    ) -> trc::Result<bool> {
+        let Some((stored_local, stored_domain)) = stored_email.rsplit_once('@') else {
+            return Ok(false);
+        };
+        if !stored_local.eq_ignore_ascii_case(local_part) {
+            return Ok(false);
+        }
+        Ok(self
+            .domain(stored_domain)
+            .await?
+            .is_some_and(|domain| domain.id == domain_id))
+    }
+}
+
 const U32_MAX: u128 = u32::MAX as u128;
 
 impl MaskedAddress {

@@ -102,6 +102,10 @@ impl Server {
         {
             // Masked email resolution
             return if masked_entry.enable
+                && self
+                    .masked_email_matches(&masked_entry.email, addr, domain.id)
+                    .await
+                    .caused_by(trc::location!())?
                 && masked_entry
                     .expires_at
                     .is_none_or(|at| at.timestamp() > now() as i64)

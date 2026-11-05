@@ -430,10 +430,14 @@ impl ResolvedClient {
             ResolvedClient::Cimd(Some(client)) => client.scopes,
             ResolvedClient::Cimd(None) => OAuthScopes::NONE,
         };
+        // Unverified clients (self-registered or metadata-document clients) are
+        // limited to the interoperable protocol scopes. Stalwart account scopes can
+        // mint app passwords and API keys, change encryption keys and masked
+        // addresses: powers whose effects outlive revoking the grant.
         let scopes = if self.is_verified() {
             scopes
         } else {
-            scopes.without(OAuthScopes::FULL)
+            scopes.without(OAuthScopes::STALWART)
         };
         Some(scopes | OAuthScopes::ALWAYS_ALLOWED)
     }

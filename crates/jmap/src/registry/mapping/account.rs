@@ -16,8 +16,9 @@ use crate::{
     },
 };
 use common::{
+    Server,
     auth::{
-        AccessToken, Permissions,
+        AccessToken, AuthRequest, Permissions, RECOVERY_ADMIN_ID,
         credential::{ApiKey, AppPassword},
         permissions::BuildPermissions,
     },
@@ -25,12 +26,16 @@ use common::{
     ipc::CacheInvalidation,
 };
 use compact_str::{CompactString, format_compact};
-use directory::core::secret::{SecretVerificationResult, hash_secret, verify_mfa_secret_hash};
+use directory::{
+    Credentials,
+    core::secret::{SecretVerificationResult, hash_secret, verify_mfa_secret_hash},
+};
 use jmap_proto::{error::set::SetError, request::MaybeInvalid, types::state::State};
 use jmap_tools::{JsonPointer, JsonPointerItem, Key, Map, Value};
 use registry::{
     jmap::{
-        IntoValue, JsonPointerPatch, MaybeUnpatched, RegistryJsonPatch, RegistryValue, ValueOptions,
+        IntoValue, JmapValue, JsonPointerPatch, MaybeUnpatched, RegistryJsonPatch, RegistryValue,
+        ValueOptions,
     },
     schema::{
         enums::{CredentialType, StorageQuota},
@@ -42,7 +47,7 @@ use registry::{
     },
     types::{datetime::UTCDateTime, id::ObjectId},
 };
-use std::str::FromStr;
+use std::{net::IpAddr, str::FromStr};
 use store::{
     registry::{
         RegistryFilterOp,
@@ -385,7 +390,31 @@ pub(crate) async fn account_set(
                     }
                 }
 
-                'outer: for (id, value) in set.create.drain() {
+                let (server, access_token, remote_ip) =
+                    (set.server, set.access_token, set.remote_ip);
+                let mut step_up_verified = false;
+                'outer: for (id, mut value) in set.create.drain() {
+                    // Credentials outlive sessions, OAuth grants and password changes,
+                    // so minting one requires proof of the caller's current password.
+                    let (current_secret, otp_code) = take_step_up_inputs(&mut value);
+                    if !step_up_verified {
+                        match verify_credential_step_up(
+                            server,
+                            access_token,
+                            remote_ip,
+                            current_secret,
+                            otp_code,
+                        )
+                        .await?
+                        {
+                            Ok(()) => step_up_verified = true,
+                            Err(err) => {
+                                set.response.not_created.append(id, err);
+                                continue 'outer;
+                            }
+                        }
+                    }
+
                     let mut credential = SecondaryCredential::default();
 
                     // Patch object
@@ -933,6 +962,114 @@ pub(crate) async fn credential_query(
     }
 
     Ok(response)
+}
+
+/// Removes the create-only verification inputs so they are never stored.
+fn take_step_up_inputs(value: &mut JmapValue<'_>) -> (Option<String>, Option<String>) {
+    let Some(object) = value.as_object_mut() else {
+        return (None, None);
+    };
+    let mut take = |property| {
+        object
+            .remove(&Key::Property(property))
+            .and_then(|value| value.as_str().map(|value| value.into_owned()))
+            .filter(|value| !value.is_empty())
+    };
+    (take(Property::CurrentSecret), take(Property::OtpCode))
+}
+
+/// Verifies the caller before an app password or API key is created.
+///
+/// The caller, not the target account, is verified: administrators acting on
+/// another account prove their own identity. Accounts without a verifiable
+/// password (identity-provider accounts, passkey-only accounts) rely on OAuth
+/// scope restrictions instead, since only verified clients may manage credentials.
+async fn verify_credential_step_up(
+    server: &Server,
+    access_token: &AccessToken,
+    remote_ip: IpAddr,
+    current_secret: Option<String>,
+    otp_code: Option<String>,
+) -> trc::Result<Result<(), SetError<Property>>> {
+    if access_token.is_secondary_credential() {
+        return Ok(Err(SetError::forbidden().with_description(
+            "App passwords and API keys cannot create credentials. Sign in with your password.",
+        )));
+    }
+
+    let account_id = access_token.account_id();
+    let username = if account_id == RECOVERY_ADMIN_ID {
+        match server.registry().recovery_admin() {
+            Some((username, _)) => username.clone(),
+            None => return Ok(Err(SetError::forbidden())),
+        }
+    } else {
+        if !has_verifiable_password(server, account_id).await? {
+            return Ok(Ok(()));
+        }
+        server.account(account_id).await?.name().to_string()
+    };
+
+    let Some(secret) = current_secret else {
+        return Ok(Err(SetError::forbidden().with_description(
+            "Enter your current password to create this credential.",
+        )));
+    };
+
+    match server
+        .authenticate(&AuthRequest::from_credentials(
+            Credentials::Basic {
+                username,
+                secret,
+                mfa_token: otp_code,
+            },
+            0,
+            remote_ip,
+        ))
+        .await
+    {
+        Ok(authenticated)
+            if authenticated.access_token.account_id() == account_id
+                && !authenticated.access_token.is_secondary_credential() =>
+        {
+            Ok(Ok(()))
+        }
+        Ok(_) => Ok(Err(
+            SetError::forbidden().with_description("Current password is incorrect.")
+        )),
+        Err(err) => match err.as_ref() {
+            trc::EventType::Auth(trc::AuthEvent::MfaRequired) => Ok(Err(SetError::forbidden()
+                .with_description("Enter the one-time code from your authenticator app."))),
+            trc::EventType::Auth(
+                trc::AuthEvent::Failed
+                | trc::AuthEvent::CredentialExpired
+                | trc::AuthEvent::TokenExpired,
+            ) => Ok(Err(
+                SetError::forbidden().with_description("Current password is incorrect.")
+            )),
+            _ => Err(err),
+        },
+    }
+}
+
+async fn has_verifiable_password(server: &Server, account_id: u32) -> trc::Result<bool> {
+    let Some(Account::User(user)) = server
+        .registry()
+        .object::<Account>(Id::from(account_id))
+        .await?
+    else {
+        return Ok(false);
+    };
+    if let Some(directory) = server
+        .domain_by_id(user.domain_id.document_id())
+        .await?
+        .as_ref()
+        .and_then(|domain| server.get_directory_for_cached_domain(domain))
+    {
+        // LDAP and SQL directories verify passwords; OpenID Connect cannot.
+        return Ok(!directory.has_bearer_token_support());
+    }
+    Ok(user.password().is_some_and(|password| !password.is_empty()))
 }
 
 pub(crate) fn validate_credential_permissions(

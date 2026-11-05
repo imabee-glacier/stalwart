@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.5] - 2026-11-05
+
+### Added
+- Passkeys under Account → Credentials → Passkeys, with enrollment, renaming and verified removal.
+- `trustedProxies` setting in the HTTP proxy settings.
+
+### Changed
+- Creating an app password or API key asks for the current password and, when two-factor authentication is enabled, the one-time code. These fields appear only when creating a credential and are never loaded back.
+- Edition state, license forms, locked fields and activation prompts are removed; every setting is editable according to the account's permissions.
+
+### Fixed
+
 ## [2.0.4] - 2026-11-02
 
 ### Added

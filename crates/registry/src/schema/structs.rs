@@ -3264,6 +3264,8 @@ pub struct Http {
     pub forwarded_hops: u64,
     #[serde(rename = "redirectRoot")]
     pub redirect_root: Option<String>,
+    #[serde(rename = "trustedProxies")]
+    pub trusted_proxies: Map<IpAddrOrMask>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

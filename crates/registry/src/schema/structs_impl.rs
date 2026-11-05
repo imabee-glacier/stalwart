@@ -37479,6 +37479,12 @@ impl ObjectImpl for Http {
                 errors.push(ValidationError::required(Property::RedirectRoot));
             }
         }
+        let value = &self.trusted_proxies;
+        for value in value.iter() {
+            if !value.is_valid() {
+                errors.push(ValidationError::invalid(Property::TrustedProxies, value));
+            }
+        }
         errors.len() == neb
     }
 
@@ -37522,7 +37528,7 @@ impl Pickle for Http {
         if self.redirect_root.is_some() {
             bitmap |= 1 << 4;
         }
-        let block = crate::pickle::begin_block(out, 9, 5, bitmap);
+        let block = crate::pickle::begin_block(out, 10, 5, bitmap);
         if let Some(value) = &self.rate_limit_authenticated {
             value.pickle(out);
         }
@@ -37536,6 +37542,7 @@ impl Pickle for Http {
         if let Some(value) = &self.redirect_root {
             value.pickle(out);
         }
+        self.trusted_proxies.pickle(out);
         crate::pickle::end_block(out, block);
     }
 
@@ -37602,6 +37609,11 @@ impl Pickle for Http {
         } else {
             Some("/account".to_string())
         };
+        let field9: Map<IpAddrOrMask> = if block.has(9) {
+            Pickle::unpickle(stream)?
+        } else {
+            Default::default()
+        };
         stream.close_block(block);
         Some(Self {
             rate_limit_authenticated: field0,
@@ -37613,6 +37625,7 @@ impl Pickle for Http {
             client_ip_source: field6,
             forwarded_hops: field7,
             redirect_root: field8,
+            trusted_proxies: field9,
         })
     }
 }
@@ -37638,6 +37651,7 @@ impl Default for Http {
             client_ip_source: ClientIpSource::Peer,
             forwarded_hops: 1u64,
             redirect_root: Some("/account".to_string()),
+            trusted_proxies: Default::default(),
         }
     }
 }
@@ -37682,6 +37696,10 @@ impl IntoValue for Http {
             Property::RedirectRoot,
             self.redirect_root.into_value_with(opts),
         );
+        map.insert_unchecked(
+            Property::TrustedProxies,
+            self.trusted_proxies.into_value_with(opts),
+        );
         JmapValue::Object(map)
     }
 }
@@ -37707,6 +37725,9 @@ impl RegistryJsonPropertyPatch for Http {
             Some(Property::ForwardedHops) => self.forwarded_hops.patch(pointer, value),
             Some(Property::RedirectRoot) => self
                 .redirect_root
+                .patch(pointer.with_validators(&[StringValidator::Trim]), value),
+            Some(Property::TrustedProxies) => self
+                .trusted_proxies
                 .patch(pointer.with_validators(&[StringValidator::Trim]), value),
             Some(Property::Type) => Ok(MaybeUnpatched::Unpatched {
                 property: Property::Type,

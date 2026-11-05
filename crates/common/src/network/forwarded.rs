@@ -5,12 +5,13 @@
  */
 
 use hyper::header::{FORWARDED, HeaderMap, HeaderName};
-use registry::schema::enums::ClientIpSource;
+use registry::{schema::enums::ClientIpSource, types::ipmask::IpAddrOrMask};
 use std::{
     net::{IpAddr, Ipv6Addr, SocketAddr},
     num::NonZeroU8,
     str::{FromStr, from_utf8},
 };
+use utils::outbound::is_global_ip;
 
 pub const MAX_FORWARDED_HOPS: u8 = 16;
 
@@ -29,6 +30,21 @@ pub enum ClientIp {
     Forwarded(IpAddr),
     Missing,
     Invalid,
+}
+
+/// Whether `peer` may supply a forwarded client address.
+///
+/// Forwarded headers are client-controlled unless a proxy overwrites them, so
+/// they are honored only from a configured proxy. With no configured proxies,
+/// only non-public peers qualify: a same-host or private-network proxy works
+/// out of the box, while a client reaching the port directly from the Internet
+/// cannot impersonate another address (including loopback).
+pub fn is_trusted_proxy(peer: IpAddr, trusted_proxies: &[IpAddrOrMask]) -> bool {
+    if trusted_proxies.is_empty() {
+        !is_global_ip(&peer)
+    } else {
+        trusted_proxies.iter().any(|network| network.matches(&peer))
+    }
 }
 
 impl RemoteIpSource {
