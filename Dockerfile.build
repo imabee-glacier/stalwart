@@ -40,7 +40,10 @@ RUN \
 # Install cargo-binstall
 RUN curl --retry 5 -fL --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 # Install cargo-chef & sccache & cargo-zigbuild
-RUN cargo binstall --no-confirm cargo-chef@0.1.78 sccache@0.17.0
+# binstall resolves prebuilt binaries through the GitHub API; anonymous requests
+# from shared runners are rate limited and fall back to building from source.
+RUN --mount=type=secret,id=GITHUB_TOKEN,env=GITHUB_TOKEN \
+    cargo binstall --no-confirm cargo-chef@0.1.78 sccache@0.17.0
 RUN cargo install --locked --git https://github.com/rust-cross/cargo-zigbuild --rev d9f7fd32fbac13cc26d23847835f7f23a5ed3a25 cargo-zigbuild
 
 # *****************
@@ -64,7 +67,7 @@ ARG BUILD_ENV
 ARG GLIBC_VERSION=2.28
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install toolchain and specify some env variables
-RUN \
+RUN --mount=type=secret,id=GITHUB_TOKEN,env=GITHUB_TOKEN \
     rustup set profile minimal && \
     rustup target add ${TARGET} && \
     mkdir -p artifact && \
