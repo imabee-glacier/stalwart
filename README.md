@@ -154,7 +154,3 @@ Install Stalwart on your server by following the instructions for your platform:
 - [Docker](https://stalw.art/docs/install/platform/docker)
 
 All documentation is available at [stalw.art/docs](https://stalw.art/docs/install/get-started).
-
-## Copyright
-
-Copyright (C) 2020, Stalwart Labs LLC
