@@ -251,12 +251,7 @@ impl Network {
                     }
                     .into();
                 }
-                ServiceProtocol::Pop3 => {
-                    pacc.protocols.pop3 = TextServer {
-                        host: hostname.to_string(),
-                    }
-                    .into();
-                }
+                ServiceProtocol::RetiredPop3 => continue,
                 ServiceProtocol::Smtp => {
                     pacc.protocols.smtp = TextServer {
                         host: hostname.to_string(),
@@ -374,7 +369,7 @@ impl Network {
             include_secrets: system.include_secrets,
             info: NetworkInfo {
                 mxs: system.mail_exchangers.into_iter().collect(),
-                services: system.services,
+                services: system.services.into_iter().filter(|(protocol, _)| *protocol != ServiceProtocol::RetiredPop3).collect(),
                 pacc: Pacc {
                     prefix,
                     suffix,

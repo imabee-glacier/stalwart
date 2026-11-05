@@ -1,0 +1,8 @@
+[advisories]
+# Marvin concerns RSA private-key operations on attacker-controlled data.
+# Reviewed 2026-11-05: rsa 0.9.10 is used only for local key generation/DER
+# conversion; mail-auth and jsonwebtoken sign via AWS-LC. rsa 0.10.0-rc.19
+# is reached through webauthn-rs/crypto-glue for public-key verification.
+# Neither path performs RSA private-key signing/decryption using this crate.
+# SECURITY_DEPENDENCIES.md records the scope and re-review requirements.
+ignore = ["RUSTSEC-2023-0071"]

@@ -580,3 +580,9 @@ a {
         animation: none !important;
     }
 }
+
+.passkey-choice { display: grid; gap: 0.875rem; }
+.passkey-choice[hidden] { display: none; }
+.signin-divider { display: flex; align-items: center; gap: 0.75rem; color: var(--dim); font-size: 0.75rem; }
+.signin-divider::before, .signin-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.passkey-hint { margin: 0; color: var(--muted-foreground); font-size: 0.75rem; line-height: 1.5; text-align: center; }

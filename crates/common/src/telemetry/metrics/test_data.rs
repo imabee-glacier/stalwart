@@ -167,7 +167,6 @@ fn counter_rate(metric: MetricType, interval: Interval) -> f64 {
     match metric {
         MetricType::SmtpConnectionStart => 900.0,
         MetricType::ImapConnectionStart => 1200.0,
-        MetricType::Pop3ConnectionStart => 40.0,
         MetricType::ManageSieveConnectionStart => 15.0,
         MetricType::HttpConnectionStart => 4000.0,
         MetricType::DeliveryAttemptStart => 450.0,

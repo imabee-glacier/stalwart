@@ -46,14 +46,14 @@ impl ResourceIdentifiers {
             };
             serves_files |= matches!(service, ServiceProtocol::Jmap | ServiceProtocol::Webdav);
             match service {
+                ServiceProtocol::RetiredPop3 => continue,
                 ServiceProtocol::Jmap
                 | ServiceProtocol::Caldav
                 | ServiceProtocol::Carddav
                 | ServiceProtocol::Webdav => push_unique(&mut trusted_hosts, host),
-                ServiceProtocol::Imap
-                | ServiceProtocol::Pop3
-                | ServiceProtocol::Smtp
-                | ServiceProtocol::Managesieve => push_unique(&mut bare_hosts, host),
+                ServiceProtocol::Imap | ServiceProtocol::Smtp | ServiceProtocol::Managesieve => {
+                    push_unique(&mut bare_hosts, host)
+                }
             }
         }
 

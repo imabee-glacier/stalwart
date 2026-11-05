@@ -111,7 +111,9 @@ where
         let len = usize::try_from(u64::unpickle(stream)?).ok()?;
         let mut vec = Vec::with_capacity(len.min(stream.remaining_len()));
         for _ in 0..len {
-            vec.push(T::unpickle(stream)?);
+            if let Some(item) = T::unpickle_item(stream)? {
+                vec.push(item);
+            }
         }
         Some(Self(vec))
     }
@@ -121,6 +123,9 @@ impl<V: IntoValue + MapItem> IntoValue for Map<V> {
     fn into_value(self) -> JmapValue<'static> {
         let mut map = jmap_tools::Map::with_capacity(self.0.len());
         for v in self.0 {
+            if v.is_retired() {
+                continue;
+            }
             let key = match v.into_string() {
                 Cow::Borrowed(s) => Key::Borrowed(s),
                 Cow::Owned(s) => Key::Owned(s),
@@ -270,6 +275,17 @@ pub trait MapItem: Sized + PartialEq + Eq + Debug {
     fn try_from_integer(value: u64) -> Option<Self>;
     fn into_string(self) -> Cow<'static, str>;
     fn as_string(&self) -> Cow<'_, str>;
+    fn is_retired(&self) -> bool {
+        false
+    }
+    /// Decodes one stored item. `Some(None)` is a well-formed entry whose
+    /// identifier no longer exists (a removed feature); it is dropped.
+    fn unpickle_item(stream: &mut PickledStream<'_>) -> Option<Option<Self>>
+    where
+        Self: Pickle,
+    {
+        Self::unpickle(stream).map(Some)
+    }
 }
 
 impl MapItem for String {
@@ -314,6 +330,12 @@ impl MapItem for Id {
 }
 
 impl<T: EnumImpl> MapItem for T {
+    fn is_retired(&self) -> bool {
+        EnumImpl::is_retired(self)
+    }
+    fn unpickle_item(stream: &mut PickledStream<'_>) -> Option<Option<Self>> {
+        u16::unpickle(stream).map(Self::from_id)
+    }
     fn try_from_string(value: &str) -> Option<Self> {
         Self::parse(value)
     }

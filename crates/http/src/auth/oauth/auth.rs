@@ -91,6 +91,7 @@ pub trait OAuthApiHandler: Sync + Send {
 
     fn handle_login_request(
         &self,
+        req: &HttpRequest,
         session: &HttpSessionData,
         origin: RequestOrigin<'_>,
         body: Vec<u8>,
@@ -125,6 +126,17 @@ pub trait OAuthApiHandler: Sync + Send {
 #[serde(tag = "type")]
 #[serde(rename_all = "camelCase")]
 pub enum LoginRequest {
+    #[serde(rename_all = "camelCase")]
+    PasskeyOptions {
+        account_name: String,
+        query: Option<String>,
+        code: Option<String>,
+    },
+    #[serde(rename_all = "camelCase")]
+    PasskeyVerify {
+        challenge_id: String,
+        credential: serde_json::Value,
+    },
     #[serde(rename_all = "camelCase")]
     AuthCode {
         account_name: String,
@@ -247,15 +259,117 @@ impl OAuthApiHandler for Server {
 
     async fn handle_login_request(
         &self,
+        req: &HttpRequest,
         session: &HttpSessionData,
         origin: RequestOrigin<'_>,
         body: Vec<u8>,
     ) -> trc::Result<HttpResponse> {
+        if body.len() > 65_536 {
+            return Err(trc::LimitEvent::SizeRequest.into_err());
+        }
         let request = serde_json::from_slice::<LoginRequest>(&body).map_err(|err| {
             trc::EventType::Resource(trc::ResourceEvent::BadParameters).from_json_error(err)
         })?;
 
         let response = match request {
+            LoginRequest::PasskeyOptions {
+                account_name,
+                query,
+                code,
+            } => {
+                use crate::auth::passkey::{self, LoginContext};
+                let context = match (query, code) {
+                    (Some(query), None) if query.len() <= 8192 => {
+                        if let Err(response) = self
+                            .validate_login_query(session, origin, &query, &issuer(self, origin))
+                            .await?
+                        {
+                            return Ok(JsonResponse::new(response)
+                                .into_http_response()
+                                .with_no_store());
+                        }
+                        LoginContext::Code { query }
+                    }
+                    (None, Some(code)) if is_user_code(&code) => LoginContext::Device { code },
+                    _ => {
+                        return Ok(JsonResponse::new(LoginResponse::Failure)
+                            .into_http_response()
+                            .with_no_store());
+                    }
+                };
+                let options =
+                    passkey::begin_login(self, req, session, &account_name, context).await?;
+                return Ok(JsonResponse::new(options)
+                    .into_http_response()
+                    .with_no_store());
+            }
+            LoginRequest::PasskeyVerify {
+                challenge_id,
+                credential,
+            } => {
+                use crate::auth::passkey::{self, LoginContext};
+                let proof = serde_json::from_value(credential)
+                    .map_err(|_| trc::ResourceEvent::BadParameters.into_err())?;
+                let (id, version, context) =
+                    match passkey::finish_login(self, req, session, &challenge_id, &proof).await {
+                        Ok(value) => value,
+                        Err(err) => {
+                            trc::error!(
+                                self.auth_failure(err, session.remote_ip, None)
+                                    .await
+                                    .span_id(session.session_id)
+                            );
+                            return Ok(JsonResponse::new(LoginResponse::Failure)
+                                .into_http_response()
+                                .with_no_store());
+                        }
+                    };
+                let access = common::auth::AccessToken::new(
+                    self.access_token(id).await?,
+                    session.remote_ip,
+                )?;
+                if access.credential_version() != version {
+                    return Ok(JsonResponse::new(LoginResponse::Failure)
+                        .into_http_response()
+                        .with_no_store());
+                }
+                let login = LoginAccount {
+                    account_id: id,
+                    tenant_id: access.tenant_id(),
+                    credential_version: version,
+                };
+                match context {
+                    LoginContext::Code { query } => {
+                        self.authorize_code(
+                            session,
+                            origin,
+                            LoginCredentials {
+                                account_name: String::new(),
+                                account_secret: String::new(),
+                                mfa_token: None,
+                                verified: Some(login),
+                            },
+                            &query,
+                            None,
+                        )
+                        .await?
+                    }
+                    LoginContext::Device { code } => {
+                        approve_device(
+                            self,
+                            session,
+                            String::new(),
+                            String::new(),
+                            None,
+                            &code,
+                            Some(true),
+                            Some(login),
+                        )
+                        .await?
+                    }
+                }
+            }
+
             LoginRequest::AuthCode {
                 account_name,
                 account_secret,
@@ -270,6 +384,7 @@ impl OAuthApiHandler for Server {
                         account_name,
                         account_secret,
                         mfa_token,
+                        verified: None,
                     },
                     &query,
                     consent,
@@ -299,6 +414,7 @@ impl OAuthApiHandler for Server {
                     mfa_token,
                     &code,
                     consent,
+                    None,
                 )
                 .await?
             }
@@ -605,7 +721,11 @@ async fn authenticate_login(
     username: String,
     secret: String,
     mfa_token: Option<String>,
+    verified: Option<LoginAccount>,
 ) -> trc::Result<Result<LoginAccount, LoginResponse>> {
+    if let Some(login) = verified {
+        return Ok(Ok(login));
+    }
     match server
         .authenticate(&AuthRequest {
             credentials: Credentials::Basic {
@@ -666,6 +786,7 @@ async fn authenticate_login(
 }
 
 struct LoginCredentials {
+    verified: Option<LoginAccount>,
     account_name: String,
     account_secret: String,
     mfa_token: Option<String>,
@@ -774,6 +895,7 @@ impl ConsentHandler for Server {
             credentials.account_name,
             credentials.account_secret,
             credentials.mfa_token,
+            credentials.verified,
         )
         .await?
         {
@@ -973,6 +1095,7 @@ async fn approve_device(
     mfa_token: Option<String>,
     code: &str,
     consent: Option<bool>,
+    verified: Option<LoginAccount>,
 ) -> trc::Result<LoginResponse> {
     let Some(consent) = consent.filter(|_| is_user_code(code)) else {
         return Ok(LoginResponse::Failure);
@@ -1020,6 +1143,7 @@ async fn approve_device(
                 account_name,
                 account_secret,
                 mfa_token,
+                verified,
             )
             .await?
             {

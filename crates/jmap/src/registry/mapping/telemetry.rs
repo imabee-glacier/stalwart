@@ -162,14 +162,26 @@ pub(crate) async fn metric_get(
 
     for id in ids {
         let item_id = id.id();
-        if let Some(metric) = get
+        let metric = match get
             .server
             .metrics_store()
             .get_value::<Metric>(ValueKey::from(ValueClass::Telemetry(
                 TelemetryClass::Metric(item_id),
             )))
-            .await?
+            .await
         {
+            Ok(metric) => metric,
+            // Rows recorded for metrics that no longer exist are reported as not found.
+            Err(err)
+                if err.matches(trc::EventType::Registry(
+                    trc::RegistryEvent::DeserializationError,
+                )) =>
+            {
+                None
+            }
+            Err(err) => return Err(err),
+        };
+        if let Some(metric) = metric {
             let mut metric = metric.into_value();
             metric.as_object_mut().unwrap().insert_unchecked(
                 Property::Timestamp,
@@ -469,7 +481,11 @@ pub(crate) async fn metric_query(
             let id = key.deserialize_be_u64(0)?;
 
             if filter_values {
-                let (mt, nid) = match Metric::deserialize(value)? {
+                // Rows recorded for metrics that no longer exist are skipped.
+                let Ok(metric) = Metric::deserialize(value) else {
+                    return Ok(true);
+                };
+                let (mt, nid) = match metric {
                     Metric::Counter(metric) | Metric::Gauge(metric) => {
                         (metric.metric, metric.node_id)
                     }

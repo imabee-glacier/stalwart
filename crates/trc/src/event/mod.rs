@@ -334,7 +334,6 @@ impl EventClass {
                 EventType::Smtp(SmtpEvent::ConnectionStart)
                     | EventType::Imap(ImapEvent::ConnectionStart)
                     | EventType::ManageSieve(ManageSieveEvent::ConnectionStart)
-                    | EventType::Pop3(Pop3Event::ConnectionStart)
                     | EventType::Http(HttpEvent::ConnectionStart)
                     | EventType::Delivery(DeliveryEvent::AttemptStart)
             ),
@@ -343,7 +342,6 @@ impl EventClass {
                 EventType::Smtp(SmtpEvent::ConnectionEnd)
                     | EventType::Imap(ImapEvent::ConnectionEnd)
                     | EventType::ManageSieve(ManageSieveEvent::ConnectionEnd)
-                    | EventType::Pop3(Pop3Event::ConnectionEnd)
                     | EventType::Http(HttpEvent::ConnectionEnd)
                     | EventType::Delivery(DeliveryEvent::AttemptEnd)
             ),
@@ -351,7 +349,6 @@ impl EventClass {
                 event,
                 EventType::Imap(ImapEvent::RawInput | ImapEvent::RawOutput)
                     | EventType::Smtp(SmtpEvent::RawInput | SmtpEvent::RawOutput)
-                    | EventType::Pop3(Pop3Event::RawInput | Pop3Event::RawOutput)
                     | EventType::ManageSieve(
                         ManageSieveEvent::RawInput | ManageSieveEvent::RawOutput
                     )
@@ -403,9 +400,6 @@ impl EventType {
             }
             EventType::ManageSieve(ManageSieveEvent::ConnectionStart) => {
                 Some(EventType::ManageSieve(ManageSieveEvent::ConnectionEnd))
-            }
-            EventType::Pop3(Pop3Event::ConnectionStart) => {
-                Some(EventType::Pop3(Pop3Event::ConnectionEnd))
             }
             EventType::Http(HttpEvent::ConnectionStart) => {
                 Some(EventType::Http(HttpEvent::ConnectionEnd))
@@ -678,18 +672,6 @@ impl ImapEvent {
     #[inline(always)]
     pub fn reason(self, error: impl Display) -> Error {
         self.into_err().reason(error)
-    }
-}
-
-impl Pop3Event {
-    #[inline(always)]
-    pub fn ctx(self, key: Key, value: impl Into<Value>) -> Error {
-        self.into_err().ctx(key, value)
-    }
-
-    #[inline(always)]
-    pub fn into_err(self) -> Error {
-        Error::new(EventType::Pop3(self))
     }
 }
 

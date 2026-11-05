@@ -372,6 +372,7 @@ pub enum CredentialType {
     Password = 0,
     AppPassword = 1,
     ApiKey = 2,
+    Passkey = 3,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
@@ -1657,7 +1658,7 @@ pub enum NetworkListenerProtocol {
     Lmtp = 1,
     Http = 2,
     Imap = 3,
-    Pop3 = 4,
+    RetiredPop3 = 4,
     ManageSieve = 5,
 }
 
@@ -1931,12 +1932,12 @@ pub enum Permission {
     ImapMetadataGet = 158,
     ImapMetadataSet = 159,
     ImapMetadataPrivate = 160,
-    Pop3Authenticate = 161,
-    Pop3List = 162,
-    Pop3Uidl = 163,
-    Pop3Stat = 164,
-    Pop3Retr = 165,
-    Pop3Dele = 166,
+    RetiredPop3Authenticate = 161,
+    RetiredPop3List = 162,
+    RetiredPop3Uidl = 163,
+    RetiredPop3Stat = 164,
+    RetiredPop3Retr = 165,
+    RetiredPop3Dele = 166,
     SieveAuthenticate = 167,
     SieveListScripts = 168,
     SieveSetActive = 169,
@@ -2811,7 +2812,7 @@ pub enum ServiceProtocol {
     #[default]
     Jmap = 0,
     Imap = 1,
-    Pop3 = 2,
+    RetiredPop3 = 2,
     Smtp = 3,
     Caldav = 4,
     Carddav = 5,

@@ -43,6 +43,10 @@ const TraceDetailView = lazyFeature(
     (m) => m.TraceDetailView,
 );
 // SPDX-SnippetEnd
+const PasskeysPage = lazyFeature(
+    () => import('@/features/passkeys/PasskeysPage'),
+    (m) => m.PasskeysPage,
+);
 const ActionPage = lazyFeature(
     () => import('@/features/actions/ActionPage'),
     (m) => m.ActionPage,
@@ -99,6 +103,9 @@ function renderView(
             return <DashboardView dashboardId={firstId} section={section ?? ''} />;
         }
         // SPDX-SnippetEnd
+        if (componentName === 'Passkeys') {
+            return <PasskeysPage />;
+        }
         if (componentName === 'LiveDelivery') {
             return <DeliveryTracePage />;
         }

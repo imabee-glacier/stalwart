@@ -52,7 +52,6 @@ fn build_autoconfig_response(
         let (protocol, tag, ports) = match protocol {
             ServiceProtocol::Smtp => ("smtp", "outgoingServer", [587, 465]),
             ServiceProtocol::Imap => ("imap", "incomingServer", [143, 993]),
-            ServiceProtocol::Pop3 => ("pop3", "incomingServer", [110, 995]),
             _ => continue,
         };
         for (is_tls, port) in ports.into_iter().enumerate() {

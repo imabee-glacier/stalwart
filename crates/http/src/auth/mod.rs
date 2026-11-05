@@ -6,4 +6,5 @@
 
 pub mod authenticate;
 pub mod oauth;
+pub mod passkey;
 pub mod permissions;

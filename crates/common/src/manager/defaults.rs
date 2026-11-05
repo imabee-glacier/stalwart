@@ -447,7 +447,6 @@ async fn insert_safe_defaults(bp: &mut Bootstrap) -> trc::Result<()> {
             (NetworkListenerProtocol::Smtp, "smtp", 25, false),
             (NetworkListenerProtocol::Smtp, "submissions", 465, true),
             (NetworkListenerProtocol::Imap, "imaps", 993, true),
-            (NetworkListenerProtocol::Pop3, "pop3s", 995, true),
             (NetworkListenerProtocol::ManageSieve, "sieve", 4190, false),
             (NetworkListenerProtocol::Http, "https", 443, true),
             (NetworkListenerProtocol::Http, "http", 8080, false),

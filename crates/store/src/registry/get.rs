@@ -59,7 +59,17 @@ impl RegistryStore {
             let Some(object) =
                 PickledStream::new(value).and_then(|mut stream| T::unpickle(&mut stream))
             else {
-                return false;
+                // Skip and report an undecodable entry (for example one written by a
+                // removed feature) instead of discarding every object of this type.
+                trc::error!(
+                    trc::EventType::Registry(trc::RegistryEvent::DeserializationError)
+                        .into_err()
+                        .caused_by(trc::location!())
+                        .id(id.id().id())
+                        .details(T::OBJECT.as_str())
+                        .ctx(trc::Key::Value, value)
+                );
+                return true;
             };
             results.push(RegistryObject {
                 id,

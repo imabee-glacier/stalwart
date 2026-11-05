@@ -96,10 +96,9 @@ static SEARCH_INDEX_PENDING_TRACING: AtomicGauge =
 const CONN_SMTP_IN: usize = 0;
 const CONN_SMTP_OUT: usize = 1;
 const CONN_IMAP: usize = 2;
-const CONN_POP3: usize = 3;
-const CONN_HTTP: usize = 4;
-const CONN_SIEVE: usize = 5;
-const TOTAL_CONN_TYPES: usize = 6;
+const CONN_HTTP: usize = 3;
+const CONN_SIEVE: usize = 4;
+const TOTAL_CONN_TYPES: usize = 5;
 
 pub struct ConnectionMetrics {
     pub active_connections: AtomicGauge,
@@ -160,15 +159,6 @@ impl Collector {
             }
             EventType::Imap(ImapEvent::ConnectionEnd) => {
                 let conn = &CONNECTION_METRICS[CONN_IMAP];
-                conn.active_connections.decrement();
-                conn.elapsed.observe(elapsed);
-            }
-            EventType::Pop3(Pop3Event::ConnectionStart) => {
-                let conn = &CONNECTION_METRICS[CONN_POP3];
-                conn.active_connections.increment();
-            }
-            EventType::Pop3(Pop3Event::ConnectionEnd) => {
-                let conn = &CONNECTION_METRICS[CONN_POP3];
                 conn.active_connections.decrement();
                 conn.elapsed.observe(elapsed);
             }
@@ -399,10 +389,6 @@ impl Collector {
                 CONNECTION_METRICS[CONN_IMAP].active_connections.get() as f64
             }
             MetricType::ImapRequestTime => CONNECTION_METRICS[CONN_IMAP].elapsed.average(),
-            MetricType::Pop3ActiveConnections => {
-                CONNECTION_METRICS[CONN_POP3].active_connections.get() as f64
-            }
-            MetricType::Pop3RequestTime => CONNECTION_METRICS[CONN_POP3].elapsed.average(),
             MetricType::SmtpActiveConnections => {
                 CONNECTION_METRICS[CONN_SMTP_IN].active_connections.get() as f64
             }
@@ -527,10 +513,6 @@ const fn init_conn_metrics() -> [ConnectionMetrics; TOTAL_CONN_TYPES] {
             CONN_IMAP => &[
                 MetricType::ImapRequestTime,
                 MetricType::ImapActiveConnections,
-            ],
-            CONN_POP3 => &[
-                MetricType::Pop3RequestTime,
-                MetricType::Pop3ActiveConnections,
             ],
             CONN_SMTP_IN => &[
                 MetricType::SmtpRequestTime,

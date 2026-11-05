@@ -4,6 +4,7 @@
 // Allow what is needed
 !crates
 !resources
+!vendor
 
 !.cargo
 !Cargo.lock

@@ -1971,6 +1971,7 @@ impl EnumImpl for CredentialType {
             b"Password" => CredentialType::Password,
             b"AppPassword" => CredentialType::AppPassword,
             b"ApiKey" => CredentialType::ApiKey,
+            b"Passkey" => CredentialType::Passkey,
         }
         .copied()
     }
@@ -1980,6 +1981,7 @@ impl EnumImpl for CredentialType {
             CredentialType::Password => "Password",
             CredentialType::AppPassword => "AppPassword",
             CredentialType::ApiKey => "ApiKey",
+            CredentialType::Passkey => "Passkey",
         }
     }
 
@@ -1992,11 +1994,12 @@ impl EnumImpl for CredentialType {
             0 => Some(CredentialType::Password),
             1 => Some(CredentialType::AppPassword),
             2 => Some(CredentialType::ApiKey),
+            3 => Some(CredentialType::Passkey),
             _ => None,
         }
     }
 
-    const COUNT: usize = 3;
+    const COUNT: usize = 4;
 }
 
 impl serde::Serialize for CredentialType {
@@ -7697,6 +7700,9 @@ impl<'de> serde::Deserialize<'de> for MtaStage {
 }
 
 impl EnumImpl for NetworkListenerProtocol {
+    fn is_retired(&self) -> bool {
+        matches!(self, Self::RetiredPop3)
+    }
     fn parse(value: &str) -> Option<Self> {
         hashify::map! {
             value.as_bytes(),
@@ -7705,7 +7711,6 @@ impl EnumImpl for NetworkListenerProtocol {
             b"lmtp" => NetworkListenerProtocol::Lmtp,
             b"http" => NetworkListenerProtocol::Http,
             b"imap" => NetworkListenerProtocol::Imap,
-            b"pop3" => NetworkListenerProtocol::Pop3,
             b"manageSieve" => NetworkListenerProtocol::ManageSieve,
         }
         .copied()
@@ -7717,7 +7722,7 @@ impl EnumImpl for NetworkListenerProtocol {
             NetworkListenerProtocol::Lmtp => "lmtp",
             NetworkListenerProtocol::Http => "http",
             NetworkListenerProtocol::Imap => "imap",
-            NetworkListenerProtocol::Pop3 => "pop3",
+            NetworkListenerProtocol::RetiredPop3 => "retiredPop3",
             NetworkListenerProtocol::ManageSieve => "manageSieve",
         }
     }
@@ -7732,7 +7737,7 @@ impl EnumImpl for NetworkListenerProtocol {
             1 => Some(NetworkListenerProtocol::Lmtp),
             2 => Some(NetworkListenerProtocol::Http),
             3 => Some(NetworkListenerProtocol::Imap),
-            4 => Some(NetworkListenerProtocol::Pop3),
+            4 => Some(NetworkListenerProtocol::RetiredPop3),
             5 => Some(NetworkListenerProtocol::ManageSieve),
             _ => None,
         }
@@ -8344,6 +8349,17 @@ impl<'de> serde::Deserialize<'de> for PasswordStrength {
 }
 
 impl EnumImpl for Permission {
+    fn is_retired(&self) -> bool {
+        matches!(
+            self,
+            Self::RetiredPop3Authenticate
+                | Self::RetiredPop3List
+                | Self::RetiredPop3Uidl
+                | Self::RetiredPop3Stat
+                | Self::RetiredPop3Retr
+                | Self::RetiredPop3Dele
+        )
+    }
     // SPDX-SnippetBegin
     // SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
     // SPDX-License-Identifier: AGPL-3.0-only
@@ -8513,12 +8529,6 @@ impl EnumImpl for Permission {
             b"imapMetadataGet" => Permission::ImapMetadataGet,
             b"imapMetadataSet" => Permission::ImapMetadataSet,
             b"imapMetadataPrivate" => Permission::ImapMetadataPrivate,
-            b"pop3Authenticate" => Permission::Pop3Authenticate,
-            b"pop3List" => Permission::Pop3List,
-            b"pop3Uidl" => Permission::Pop3Uidl,
-            b"pop3Stat" => Permission::Pop3Stat,
-            b"pop3Retr" => Permission::Pop3Retr,
-            b"pop3Dele" => Permission::Pop3Dele,
             b"sieveAuthenticate" => Permission::SieveAuthenticate,
             b"sieveListScripts" => Permission::SieveListScripts,
             b"sieveSetActive" => Permission::SieveSetActive,
@@ -9197,12 +9207,12 @@ impl EnumImpl for Permission {
             Permission::ImapMetadataGet => "imapMetadataGet",
             Permission::ImapMetadataSet => "imapMetadataSet",
             Permission::ImapMetadataPrivate => "imapMetadataPrivate",
-            Permission::Pop3Authenticate => "pop3Authenticate",
-            Permission::Pop3List => "pop3List",
-            Permission::Pop3Uidl => "pop3Uidl",
-            Permission::Pop3Stat => "pop3Stat",
-            Permission::Pop3Retr => "pop3Retr",
-            Permission::Pop3Dele => "pop3Dele",
+            Permission::RetiredPop3Authenticate => "retiredPop3Authenticate",
+            Permission::RetiredPop3List => "retiredPop3List",
+            Permission::RetiredPop3Uidl => "retiredPop3Uidl",
+            Permission::RetiredPop3Stat => "retiredPop3Stat",
+            Permission::RetiredPop3Retr => "retiredPop3Retr",
+            Permission::RetiredPop3Dele => "retiredPop3Dele",
             Permission::SieveAuthenticate => "sieveAuthenticate",
             Permission::SieveListScripts => "sieveListScripts",
             Permission::SieveSetActive => "sieveSetActive",
@@ -9955,12 +9965,12 @@ impl EnumImpl for Permission {
             158 => Some(Permission::ImapMetadataGet),
             159 => Some(Permission::ImapMetadataSet),
             160 => Some(Permission::ImapMetadataPrivate),
-            161 => Some(Permission::Pop3Authenticate),
-            162 => Some(Permission::Pop3List),
-            163 => Some(Permission::Pop3Uidl),
-            164 => Some(Permission::Pop3Stat),
-            165 => Some(Permission::Pop3Retr),
-            166 => Some(Permission::Pop3Dele),
+            161 => Some(Permission::RetiredPop3Authenticate),
+            162 => Some(Permission::RetiredPop3List),
+            163 => Some(Permission::RetiredPop3Uidl),
+            164 => Some(Permission::RetiredPop3Stat),
+            165 => Some(Permission::RetiredPop3Retr),
+            166 => Some(Permission::RetiredPop3Dele),
             167 => Some(Permission::SieveAuthenticate),
             168 => Some(Permission::SieveListScripts),
             169 => Some(Permission::SieveSetActive),
@@ -10713,12 +10723,6 @@ impl Permission {
         Permission::ImapMetadataGet,
         Permission::ImapMetadataSet,
         Permission::ImapMetadataPrivate,
-        Permission::Pop3Authenticate,
-        Permission::Pop3List,
-        Permission::Pop3Uidl,
-        Permission::Pop3Stat,
-        Permission::Pop3Retr,
-        Permission::Pop3Dele,
         Permission::SieveAuthenticate,
         Permission::SieveListScripts,
         Permission::SieveSetActive,
@@ -12857,13 +12861,15 @@ impl<'de> serde::Deserialize<'de> for SecretTextType {
 }
 
 impl EnumImpl for ServiceProtocol {
+    fn is_retired(&self) -> bool {
+        matches!(self, Self::RetiredPop3)
+    }
     fn parse(value: &str) -> Option<Self> {
         hashify::map! {
             value.as_bytes(),
             ServiceProtocol,
             b"jmap" => ServiceProtocol::Jmap,
             b"imap" => ServiceProtocol::Imap,
-            b"pop3" => ServiceProtocol::Pop3,
             b"smtp" => ServiceProtocol::Smtp,
             b"caldav" => ServiceProtocol::Caldav,
             b"carddav" => ServiceProtocol::Carddav,
@@ -12877,7 +12883,7 @@ impl EnumImpl for ServiceProtocol {
         match self {
             ServiceProtocol::Jmap => "jmap",
             ServiceProtocol::Imap => "imap",
-            ServiceProtocol::Pop3 => "pop3",
+            ServiceProtocol::RetiredPop3 => "retiredPop3",
             ServiceProtocol::Smtp => "smtp",
             ServiceProtocol::Caldav => "caldav",
             ServiceProtocol::Carddav => "carddav",
@@ -12894,7 +12900,7 @@ impl EnumImpl for ServiceProtocol {
         match id {
             0 => Some(ServiceProtocol::Jmap),
             1 => Some(ServiceProtocol::Imap),
-            2 => Some(ServiceProtocol::Pop3),
+            2 => Some(ServiceProtocol::RetiredPop3),
             3 => Some(ServiceProtocol::Smtp),
             4 => Some(ServiceProtocol::Caldav),
             5 => Some(ServiceProtocol::Carddav),

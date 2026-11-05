@@ -32,6 +32,10 @@ pub trait EnumImpl: Sized + Debug + PartialEq + Eq {
     fn as_str(&self) -> &'static str;
     fn from_id(id: u16) -> Option<Self>;
     fn to_id(&self) -> u16;
+    /// Reserved storage IDs are readable but must not be offered as active settings.
+    fn is_retired(&self) -> bool {
+        false
+    }
 }
 
 pub trait ObjectImpl: Serialize + DeserializeOwned + Default + Clone + Send + Sync {

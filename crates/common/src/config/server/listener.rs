@@ -108,7 +108,13 @@ impl Listeners {
             NetworkListenerProtocol::Lmtp => ServerProtocol::Lmtp,
             NetworkListenerProtocol::Http => ServerProtocol::Http,
             NetworkListenerProtocol::Imap => ServerProtocol::Imap,
-            NetworkListenerProtocol::Pop3 => ServerProtocol::Pop3,
+            NetworkListenerProtocol::RetiredPop3 => {
+                bp.build_warning(
+                    id,
+                    "POP3 has been removed; this legacy listener is ignored.",
+                );
+                return;
+            }
             NetworkListenerProtocol::ManageSieve => ServerProtocol::ManageSieve,
         };
 

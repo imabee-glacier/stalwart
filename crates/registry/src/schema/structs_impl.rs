@@ -11275,6 +11275,7 @@ impl Credential {
             Credential::Password(inner) => inner.validate(errors),
             Credential::AppPassword(inner) => inner.validate(errors),
             Credential::ApiKey(inner) => inner.validate(errors),
+            Credential::Passkey(_) => true,
         }
     }
 }
@@ -11288,6 +11289,10 @@ impl Default for Credential {
 impl Pickle for Credential {
     fn pickle(&self, out: &mut Vec<u8>) {
         match self {
+            Credential::Passkey(inner) => {
+                3u16.pickle(out);
+                inner.pickle(out);
+            }
             Credential::Password(inner) => {
                 0u16.pickle(out);
                 inner.pickle(out);
@@ -11308,6 +11313,7 @@ impl Pickle for Credential {
             0 => Pickle::unpickle(stream).map(Credential::Password),
             1 => Pickle::unpickle(stream).map(Credential::AppPassword),
             2 => Pickle::unpickle(stream).map(Credential::ApiKey),
+            3 => Pickle::unpickle(stream).map(Credential::Passkey),
             _ => None,
         }
     }
@@ -11334,6 +11340,7 @@ impl IntoValue for Credential {
                     .insert_unchecked(Property::Type, JmapValue::Str("AppPassword".into()));
                 obj
             }
+            Credential::Passkey(obj) => obj.into_value_with(opts),
             Credential::ApiKey(obj) => {
                 let mut obj = obj.into_value_with(opts);
                 obj.as_object_mut()
@@ -11356,12 +11363,22 @@ impl RegistryJsonPatch for Credential {
                 CredentialType::Password => *self = Credential::Password(Default::default()),
                 CredentialType::AppPassword => *self = Credential::AppPassword(Default::default()),
                 CredentialType::ApiKey => *self = Credential::ApiKey(Default::default()),
+                CredentialType::Passkey => {
+                    return Err(PatchError::new(
+                        pointer,
+                        "Passkeys must be registered through WebAuthn",
+                    ));
+                }
             }
         }
         match self {
             Credential::Password(inner) => inner.patch(pointer, value),
             Credential::AppPassword(inner) => inner.patch(pointer, value),
             Credential::ApiKey(inner) => inner.patch(pointer, value),
+            Credential::Passkey(_) => Err(PatchError::new(
+                pointer,
+                "Passkeys are managed through account security settings",
+            )),
         }
     }
 }
@@ -11372,6 +11389,7 @@ impl Credential {
             Credential::Password(_) => CredentialType::Password,
             Credential::AppPassword(_) => CredentialType::AppPassword,
             Credential::ApiKey(_) => CredentialType::ApiKey,
+            Credential::Passkey(_) => CredentialType::Passkey,
         }
     }
 }
@@ -50703,6 +50721,12 @@ impl ObjectImpl for NetworkListener {
 
     fn validate(&self, errors: &mut Vec<ValidationError>) -> bool {
         let neb = errors.len();
+        if self.protocol.is_retired() {
+            errors.push(ValidationError::invalid(
+                Property::Protocol,
+                "This protocol has been removed",
+            ));
+        }
         let value = &self.name;
         if value.is_empty() {
             errors.push(ValidationError::required(Property::Name));
@@ -68591,13 +68615,6 @@ impl Pickle for SystemSettings {
                     },
                 ),
                 (
-                    ServiceProtocol::Pop3,
-                    Service {
-                        cleartext: false,
-                        ..Default::default()
-                    },
-                ),
-                (
                     ServiceProtocol::Smtp,
                     Service {
                         cleartext: false,
@@ -68685,13 +68702,6 @@ impl Default for SystemSettings {
                     },
                 ),
                 (
-                    ServiceProtocol::Pop3,
-                    Service {
-                        cleartext: false,
-                        ..Default::default()
-                    },
-                ),
-                (
                     ServiceProtocol::Smtp,
                     Service {
                         cleartext: false,
@@ -68747,7 +68757,14 @@ impl IntoValue for SystemSettings {
             Property::MailExchangers,
             self.mail_exchangers.into_value_with(opts),
         );
-        map.insert_unchecked(Property::Services, self.services.into_value_with(opts));
+        map.insert_unchecked(
+            Property::Services,
+            self.services
+                .into_iter()
+                .filter(|(protocol, _)| !protocol.is_retired())
+                .collect::<utils::map::vec_map::VecMap<_, _>>()
+                .into_value_with(opts),
+        );
         map.insert_unchecked(
             Property::ProviderInfo,
             self.provider_info.into_value_with(opts),
@@ -76235,6 +76252,15 @@ impl UserAccount {
         }
         // SPDX-SnippetEnd
         self.roles.index(i);
+        for credential in self.credentials.iter() {
+            if let Credential::Passkey(passkey) = credential {
+                i.unique_global_composite(
+                    Property::CredentialId,
+                    &passkey.credential_key,
+                    &passkey.rp_id,
+                );
+            }
+        }
         for item in self.aliases.values() {
             item.index(i);
         }
@@ -76274,7 +76300,7 @@ impl Pickle for UserAccount {
         if self.time_zone.is_some() {
             bitmap |= 1 << 3;
         }
-        let block = crate::pickle::begin_block(out, 15, 4, bitmap);
+        let block = crate::pickle::begin_block(out, 16, 4, bitmap);
         self.name.pickle(out);
         self.domain_id.pickle(out);
         self.credentials.pickle(out);
@@ -76308,6 +76334,7 @@ impl Pickle for UserAccount {
             value.pickle(out);
         }
         self.encryption_at_rest.pickle(out);
+        self.credential_revision.pickle(out);
         crate::pickle::end_block(out, block);
     }
 
@@ -76414,8 +76441,14 @@ impl Pickle for UserAccount {
         } else {
             Default::default()
         };
+        let credential_revision = if block.has(15) {
+            u64::unpickle(stream)?
+        } else {
+            0
+        };
         stream.close_block(block);
         Some(Self {
+            credential_revision,
             name: field0,
             domain_id: field1,
             credentials: field2,
@@ -76446,6 +76479,7 @@ impl Pickle for UserAccount {
 impl Default for UserAccount {
     fn default() -> Self {
         Self {
+            credential_revision: 0,
             name: Default::default(),
             domain_id: Default::default(),
             credentials: Default::default(),

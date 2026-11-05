@@ -162,6 +162,7 @@ pub const KV_LOCK_SEARCH_INDEX: u8 = 17;
 pub const KV_OAUTH_CIMD: u8 = 18;
 pub const KV_RATE_LIMIT_CIMD: u8 = 19;
 pub const KV_KEY_LOOKUP: u8 = 20;
+pub const KV_PASSKEY: u8 = 21;
 
 #[derive(Clone)]
 pub struct Server {

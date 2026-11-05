@@ -26,7 +26,7 @@ use std::{
 use store::registry::bootstrap::Bootstrap;
 use tokio::{net::TcpStream, sync::watch, time::timeout};
 use tokio_rustls::server::TlsStream;
-use trc::{EventType, HttpEvent, ImapEvent, ManageSieveEvent, Pop3Event, SmtpEvent};
+use trc::{EventType, HttpEvent, ImapEvent, ManageSieveEvent, SmtpEvent};
 use utils::UnwrapFailure;
 
 impl Listener {
@@ -103,10 +103,6 @@ impl Listener {
                     ServerProtocol::Imap => (
                         EventType::Imap(ImapEvent::ConnectionStart),
                         EventType::Imap(ImapEvent::ConnectionEnd),
-                    ),
-                    ServerProtocol::Pop3 => (
-                        EventType::Pop3(Pop3Event::ConnectionStart),
-                        EventType::Pop3(Pop3Event::ConnectionEnd),
                     ),
                     ServerProtocol::Http => (
                         EventType::Http(HttpEvent::ConnectionStart),

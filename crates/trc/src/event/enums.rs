@@ -9,6 +9,10 @@
 pub const TOTAL_EVENT_COUNT: usize = 670;
 pub const TOTAL_METRIC_COUNT: usize = 399;
 
+// Identifiers of the removed POP3 protocol are permanently reserved and must not be
+// reused: events 330-347 and metrics 14, 19, 194 and 195. Stored data that still
+// references them is skipped when decoded.
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EventType {
     Acme(AcmeEvent),
@@ -44,7 +48,6 @@ pub enum EventType {
     MtaSts(MtaStsEvent),
     Network(NetworkEvent),
     OutgoingReport(OutgoingReportEvent),
-    Pop3(Pop3Event),
     PushSubscription(PushSubscriptionEvent),
     Queue(QueueEvent),
     Registry(RegistryEvent),
@@ -597,29 +600,6 @@ pub enum OutgoingReportEvent {
     NoRecipientsFound = 322,
     Locked = 321,
     MaxSizeExceeded = 54,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(u16)]
-pub enum Pop3Event {
-    ConnectionStart = 332,
-    ConnectionEnd = 331,
-    Delete = 333,
-    Reset = 342,
-    Quit = 339,
-    Fetch = 335,
-    List = 336,
-    ListMessage = 337,
-    Uidl = 345,
-    UidlMessage = 346,
-    Stat = 344,
-    Noop = 338,
-    Capabilities = 330,
-    StartTls = 343,
-    Utf8 = 347,
-    Error = 334,
-    RawInput = 340,
-    RawOutput = 341,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -1253,10 +1233,6 @@ pub enum MetricType {
     OutgoingReportNotFound = 191,
     OutgoingReportSubmissionError = 192,
     OutgoingReportNoRecipientsFound = 193,
-    Pop3RequestTime = 14,
-    Pop3ActiveConnections = 19,
-    Pop3ConnectionStart = 194,
-    Pop3ConnectionEnd = 195,
     PushSubscriptionSuccess = 197,
     PushSubscriptionError = 198,
     PushSubscriptionNotFound = 199,

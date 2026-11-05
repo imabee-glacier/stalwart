@@ -73,6 +73,13 @@ pub async fn validate_account(
 
     let validate_permissions = match (&mut account, old_account) {
         (Account::User(account), AccountUpdate::Update(Account::User(old_account))) => {
+            if old_account.credentials.iter().any(|old| {
+                if let Credential::Passkey(old) = old {
+                    !account.credentials.iter().any(|new| matches!(new, Credential::Passkey(new) if new.rp_id == old.rp_id && new.credential_key == old.credential_key))
+                } else { false }
+            }) {
+                account.credential_revision = store::rand::random::<u64>().max(1);
+            }
             // Validate credentials
             let has_password = account.credentials.values().any(|credential| {
                 matches!(credential, Credential::Password(credential) if credential.credential_id.is_valid())
@@ -272,6 +279,11 @@ async fn validate_credential_creation(
     has_password: bool,
 ) -> trc::Result<Result<(), SetError<Property>>> {
     match credential {
+        Credential::Passkey(_) => {
+            return Ok(Err(SetError::forbidden().with_description(
+                "Passkeys must be registered through WebAuthn.",
+            )));
+        }
         Credential::Password(credential) => {
             if is_external_directory {
                 return Ok(Err(SetError::forbidden().with_description(

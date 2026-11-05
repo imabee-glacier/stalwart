@@ -359,6 +359,9 @@ pub(crate) async fn account_set(
 
                 for credential in account.credentials.values() {
                     match credential {
+                        Credential::Passkey(c) => {
+                            last_credential_id = last_credential_id.max(c.credential_id.id());
+                        }
                         Credential::Password(c) => {
                             let credential_id = c.credential_id.id();
                             if credential_id > last_credential_id {

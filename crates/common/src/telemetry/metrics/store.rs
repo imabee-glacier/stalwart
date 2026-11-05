@@ -37,7 +37,6 @@ persisted_metrics!(
     PERSISTED_COUNTERS => [
         SmtpConnectionStart,
         ImapConnectionStart,
-        Pop3ConnectionStart,
         ManageSieveConnectionStart,
         HttpConnectionStart,
         DeliveryAttemptStart,

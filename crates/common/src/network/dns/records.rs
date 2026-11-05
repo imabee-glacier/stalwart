@@ -195,7 +195,7 @@ impl Server {
                             }
                             ServiceProtocol::Webdav | ServiceProtocol::Managesieve => continue,
                             ServiceProtocol::Imap => [("imap", 143), ("imaps", 993)],
-                            ServiceProtocol::Pop3 => [("pop3", 110), ("pop3s", 995)],
+                            ServiceProtocol::RetiredPop3 => continue,
                             ServiceProtocol::Smtp => [("submission", 587), ("submissions", 465)],
                         };
 
@@ -313,7 +313,7 @@ impl Server {
                         if hostname.ends_with(&domain_name_suffix) || hostname == domain_name {
                             let port = match protocol {
                                 ServiceProtocol::Imap => 993,
-                                ServiceProtocol::Pop3 => 995,
+                                ServiceProtocol::RetiredPop3 => continue,
                                 ServiceProtocol::Smtp => 465,
                                 ServiceProtocol::Jmap
                                 | ServiceProtocol::Caldav

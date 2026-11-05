@@ -41,17 +41,20 @@ FROM chef AS planner
 COPY Cargo.toml .
 COPY Cargo.lock .
 COPY crates/ crates/
+COPY vendor/ vendor/
 COPY resources/ resources/
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
+COPY vendor/ vendor/
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY Cargo.toml .
 COPY Cargo.lock .
 COPY crates/ crates/
+COPY vendor/ vendor/
 COPY resources/ resources/
-RUN cargo build -p stalwart --no-default-features --features "foundationdb s3 redis azure nats" --release
+RUN cargo build --locked -p stalwart --no-default-features --features "foundationdb s3 redis azure nats" --release
 
 FROM debian:trixie-slim AS runtime
 
@@ -70,7 +73,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 USER stalwart
 WORKDIR /var/lib/stalwart
 VOLUME ["/etc/stalwart", "/var/lib/stalwart"]
-EXPOSE	443 25 110 587 465 143 993 995 4190 8080
+EXPOSE	443 25 587 465 143 993 4190 8080
 ENV STALWART_HEALTHCHECK_URL=https://127.0.0.1:443/healthz/live
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -fsSk "$STALWART_HEALTHCHECK_URL" || curl -fsS http://127.0.0.1:8080/healthz/live || exit 1

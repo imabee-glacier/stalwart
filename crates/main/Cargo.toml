@@ -2,7 +2,7 @@
 name = "stalwart"
 description = "Stalwart Mail and Collaboration Server"
 authors = [ "Stalwart Labs LLC <hello@stalw.art>"]
-repository = "https://github.com/stalwartlabs/stalwart"
+repository = "https://github.com/imabee-glacier/stalwart"
 homepage = "https://stalw.art"
 keywords = ["imap", "jmap", "smtp", "email", "mail", "webdav", "server"]
 categories = ["email"]
@@ -22,7 +22,6 @@ types = { path = "../types" }
 smtp = { path = "../smtp" }
 smtp-proto = { path = "../smtp-proto", features = ["rkyv", "serde"] }
 imap = { path = "../imap" }
-pop3 = { path = "../pop3" }
 spam-filter = { path = "../spam-filter" }
 managesieve = { path = "../managesieve" }
 common = { path = "../common" }

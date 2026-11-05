@@ -26,9 +26,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--browser', action='store_true')
     parser.add_argument('--bootstrap', action='store_true')
+    parser.add_argument('--passkeys', action='store_true')
     parser.add_argument('--binary', type=Path, default=ROOT / 'target/debug/stalwart')
     args = parser.parse_args()
-    if args.browser and args.bootstrap:
+    if (args.browser or args.passkeys) and args.bootstrap:
         parser.error('The Branding browser test requires the SQLite fixture; omit --bootstrap.')
 
     with socket.socket() as probe:
@@ -82,6 +83,9 @@ def main():
                 assert set(schema['fields']['x:Branding']['properties']) == {'logo'}
                 assert 'x:Enterprise' not in schema['objects']
                 print('PASS: schema exposes Branding without activation fields', flush=True)
+                assert 'pop3' not in json.dumps(schema).lower()
+                assert 'pop3' not in json.dumps(account).lower()
+                print('PASS: schema and account permissions expose no POP3 protocol or permissions', flush=True)
                 for endpoint in ['/api/token/tracing', '/api/token/metrics']:
                     status, body = request(endpoint)
                     assert status == 200 and len(body) > 10
@@ -92,6 +96,10 @@ def main():
                 except urllib.error.HTTPError as error:
                     assert error.code == 401
                 print('PASS: authorization remains enforced', flush=True)
+                if args.passkeys:
+                    subprocess.run(['node', 'webui/tests/passkeys-browser.mjs'], cwd=ROOT,
+                                   env={**os.environ, 'STALWART_TEST_BASE_URL': base.replace('127.0.0.1', 'localhost'),
+                                        'STALWART_TEST_AUTHORIZATION': authorization}, check=True)
                 if args.browser:
                     subprocess.run(['node', 'webui/tests/server-browser-smoke.mjs'], cwd=ROOT,
                                    env={**os.environ, 'STALWART_TEST_BASE_URL': base,

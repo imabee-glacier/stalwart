@@ -8,6 +8,7 @@ use crate::schema::prelude::{DkimSignature, Roles, SecretText};
 use types::id::Id;
 
 pub mod account;
+pub mod passkey;
 // SPDX-SnippetBegin
 // SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
 // SPDX-License-Identifier: AGPL-3.0-only

@@ -190,6 +190,7 @@ impl PermissionsListBuilder for Permissions {
                 bytes ^= 1 << item;
                 if let Some(permission) =
                     Permission::from_id(((block_num * USIZE_BITS) + item as usize) as u16)
+                    && !permission.is_retired()
                 {
                     permissions.push(permission);
                 }
@@ -307,7 +308,6 @@ impl Default for DefaultPermissions {
                     let name = permission.as_str();
                     if name.starts_with("jmap")
                         || name.starts_with("imap")
-                        || name.starts_with("pop3")
                         || name.starts_with("calendar")
                         || name.starts_with("email")
                         || name.starts_with("dav")
@@ -380,6 +380,9 @@ impl From<&VecMap<Permission, bool>> for PermissionsGroup {
     fn from(value: &VecMap<Permission, bool>) -> Self {
         let mut permissions = PermissionsGroup::default();
         for (permission, is_set) in value {
+            if permission.is_retired() {
+                continue;
+            }
             if *is_set {
                 permissions.enabled.set(*permission as usize);
             } else {
@@ -392,14 +395,22 @@ impl From<&VecMap<Permission, bool>> for PermissionsGroup {
 
 pub trait BuildPermissions {
     fn from_permission(list: &[Permission]) -> Permissions;
+    fn all_active() -> Permissions;
 }
 
 impl BuildPermissions for Permissions {
+    /// Builds a permission set, dropping reserved IDs of removed features
+    /// (such as POP3) that may still be present in stored roles.
     fn from_permission(list: &[Permission]) -> Permissions {
         let mut permission = Permissions::default();
-        for p in list {
+        for p in list.iter().filter(|p| !p.is_retired()) {
             permission.set(*p as usize);
         }
         permission
+    }
+
+    /// Every permission the server currently implements.
+    fn all_active() -> Permissions {
+        Self::from_permission(Permission::ALL)
     }
 }

@@ -23,7 +23,7 @@ pub struct Configuration {
 /// The `protocols` object listing available protocol endpoints.
 ///
 /// HTTP-based protocols (JMAP, CalDAV, CardDAV, WebDAV) use [`HttpServer`].
-/// Text-based protocols (IMAP, POP3, SMTP, ManageSieve) use [`TextServer`].
+/// Text-based protocols (IMAP, SMTP, ManageSieve) use [`TextServer`].
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Protocols {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -31,9 +31,6 @@ pub struct Protocols {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub imap: Option<TextServer>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pop3: Option<TextServer>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub smtp: Option<TextServer>,
@@ -60,10 +57,10 @@ pub struct HttpServer {
     pub url: String,
 }
 
-/// A text-based protocol endpoint (IMAP, POP3, SMTP, ManageSieve).
+/// A text-based protocol endpoint (IMAP, SMTP, ManageSieve).
 ///
 /// Connections use TLS on the protocol's default port
-/// (993 IMAP, 995 POP3, 465 SMTP).
+/// (993 IMAP, 465 SMTP).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TextServer {
     /// Hostname of the server.

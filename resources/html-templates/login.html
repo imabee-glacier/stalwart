@@ -175,7 +175,7 @@
             <div id="field-username">
                 <label class="label" for="username">Username</label>
                 <input class="input" id="username" name="username" type="text" placeholder="you@example.com"
-                    autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+                    autocomplete="username webauthn" autocapitalize="none" autocorrect="off" spellcheck="false" required>
             </div>
             <div id="field-password">
                 <label class="label" for="password">Password</label>
@@ -193,6 +193,14 @@
                     inputmode="numeric" pattern="\d{6}" autocomplete="one-time-code">
             </div>
             <button type="submit" class="btn" id="submit-btn">Sign in</button>
+            <div id="passkey-choice" class="passkey-choice" hidden>
+                <div class="signin-divider"><span>or</span></div>
+                <button type="button" class="btn secondary" id="passkey-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 11v2m-4 0v-2a4 4 0 0 1 8 0v3m-12-1v-2a8 8 0 0 1 16 0v2M8 17v-1m4 1v3m4-3v2M4 17v2"/></svg>
+                    <span id="passkey-label">Sign in with passkey</span>
+                </button>
+                <p class="passkey-hint">Use your device’s screen lock or a security key.</p>
+            </div>
         </form>
 
         <div class="stack" id="consent" hidden>

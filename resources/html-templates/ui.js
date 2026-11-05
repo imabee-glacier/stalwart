@@ -222,6 +222,8 @@
             }
 
             function showLoginForm() {
+                if (window.isSecureContext && window.PublicKeyCredential && navigator.credentials) show($('passkey-choice'));
+                else hide($('passkey-choice'));
                 stage = 'login';
                 hide($('consent'));
                 show($('field-username'));
@@ -256,6 +258,7 @@
             }
 
             function enterMfaMode() {
+                hide($('passkey-choice'));
                 inMfa = true;
                 hide($('field-username'));
                 hide($('field-password'));
@@ -298,6 +301,7 @@
             function postLogin(body) {
                 var btn = $('submit-btn');
                 btn.disabled = true;
+                $('passkey-btn').disabled = true;
                 return fetch('/api/auth', {
                     method: 'POST',
                     credentials: 'same-origin',
@@ -316,22 +320,43 @@
                     }
                     return res.json();
                 }).then(function (json) {
-                    handleResponse(json);
+                    return handleResponse(json, body.type);
                 }).catch(function (err) {
                     console.log('Login request failed:', err);
                     showError(FAILURE);
                 }).then(function () {
                     btn.disabled = false;
+                    $('passkey-btn').disabled = false;
+                    setText($('passkey-label'), 'Sign in with passkey');
                 });
             }
 
-            function handleResponse(resp) {
+            function handleResponse(resp, requestType) {
                 if (!resp || typeof resp !== 'object' || typeof resp.type !== 'string') {
                     console.log('Malformed login response:', resp);
                     showError(FAILURE);
                     return;
                 }
                 switch (resp.type) {
+                    case 'passkeyOptions':
+                        setText($('passkey-label'), 'Waiting for passkey…');
+                        var options = resp.options.publicKey;
+                        options.challenge = decodePasskeyBytes(options.challenge);
+                        options.allowCredentials = (options.allowCredentials || []).map(function (entry) {
+                            return Object.assign({}, entry, { id: decodePasskeyBytes(entry.id) });
+                        });
+                        return navigator.credentials.get({ publicKey: options }).then(function (key) {
+                            if (!key) throw new Error('No passkey selected');
+                            return postLogin({ type: 'passkeyVerify', challengeId: resp.challengeId, credential: {
+                                id: key.id, rawId: encodePasskeyBytes(key.rawId), type: key.type,
+                                response: { clientDataJSON: encodePasskeyBytes(key.response.clientDataJSON), authenticatorData: encodePasskeyBytes(key.response.authenticatorData), signature: encodePasskeyBytes(key.response.signature), userHandle: key.response.userHandle ? encodePasskeyBytes(key.response.userHandle) : null },
+                                clientExtensionResults: key.getClientExtensionResults()
+                            } });
+                        }).catch(function (error) {
+                            showError(error.name === 'NotAllowedError' || error.name === 'AbortError'
+                                ? 'The passkey request was cancelled or timed out. You can try again.'
+                                : 'Could not use this passkey. Try another passkey or sign in with your password.');
+                        });
                     case 'authenticated':
                     case 'redirect':
                         navigate(resp.location);
@@ -366,6 +391,10 @@
                         showError('Your password has expired. Change it in the account portal, then sign in again.');
                         return;
                     case 'failure':
+                        if (requestType === 'passkeyVerify') {
+                            showError('Could not verify this passkey, or the sign-in request expired. Try again or sign in with your password.');
+                            return;
+                        }
                         if (inMfa) leaveMfaMode();
                         showError(isDevice
                             ? 'Invalid username or password, or the device code has expired. Please try again.'
@@ -462,6 +491,7 @@
             }
 
             function startDevice() {
+                hide($('passkey-choice'));
                 stage = 'code';
                 hide($('field-username'));
                 hide($('field-password'));
@@ -540,6 +570,21 @@
                 postLogin(buildRequest(lastCreds, null));
             }
 
+            function decodePasskeyBytes(value) {
+                return Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/')), function (c) { return c.charCodeAt(0); }).buffer;
+            }
+            function encodePasskeyBytes(value) {
+                return btoa(Array.from(new Uint8Array(value), function (v) { return String.fromCharCode(v); }).join('')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            }
+            $('passkey-btn').addEventListener('click', function () {
+                if (stage !== 'login' || inMfa || this.disabled) return;
+                var username = ($('username').value || '').trim();
+                if (!username) { showError('Enter your username to use a passkey.'); $('username').focus(); return; }
+                clearAlert(); lastCreds = null; $('password').value = '';
+                var request = { type: 'passkeyOptions', accountName: username };
+                if (isDevice) request.code = deviceCode; else request.query = query;
+                postLogin(request);
+            });
             $('login-form').addEventListener('submit', submitLogin);
             $('allow-btn').addEventListener('click', function () {
                 clearAlert();

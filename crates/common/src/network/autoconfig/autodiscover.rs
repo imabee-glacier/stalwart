@@ -124,7 +124,6 @@ fn build_autodiscover_response(
     for (protocol, service) in services {
         let (protocol, ports) = match protocol {
             ServiceProtocol::Imap => ("IMAP", [(993, true), (143, false)]),
-            ServiceProtocol::Pop3 => ("POP3", [(995, true), (110, false)]),
             ServiceProtocol::Smtp => ("SMTP", [(465, true), (587, false)]),
             _ => continue,
         };

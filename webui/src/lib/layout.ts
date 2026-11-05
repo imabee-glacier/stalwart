@@ -22,6 +22,7 @@ interface CustomComponentRule {
 
 const CUSTOM_COMPONENTS: Record<string, CustomComponentRule> = {
     LiveDelivery: { permission: 'liveDeliveryTest' },
+    Passkeys: { permission: 'sysAccountPasswordGet', backingObject: 'x:AccountPassword' },
     // SPDX-SnippetBegin
     // SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
     // SPDX-License-Identifier: AGPL-3.0-only

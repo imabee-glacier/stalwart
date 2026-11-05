@@ -1,18 +1,34 @@
 name: Validate server and bundled dashboard
 on:
   pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: cargo install cargo-audit --locked --version 0.22.1
+      - run: python3 resources/scripts/check_crypto_policy.py
+      - run: cargo audit
   dashboard:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: webui
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -24,26 +40,44 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
-      - run: git diff --exit-code -- ../resources/webui.zip
+      - run: git diff --exit-code
+      - run: python3 bundle.py --check
   server:
     runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_BUILD_JOBS: 2
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Free build disk space
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev libsasl2-dev libclang-dev clang cmake pkg-config
+      - run: python3 resources/scripts/build_login_assets.py --check
       - run: cargo fmt --all --check
-      - run: cargo check --workspace --all-targets --all-features
-      - run: cargo check --workspace --all-targets --no-default-features --features stalwart/sqlite,stalwart/postgres,stalwart/mysql
-      - run: cargo test -p registry --test open_source_branding -p common --test runtime_settings
-      - run: cargo test -p common --lib bundled_webadmin_tests
-      - run: cargo test --workspace --no-fail-fast
+      - run: cargo check --locked --workspace --all-targets --all-features
+      - run: cargo check --locked --workspace --all-targets --no-default-features --features stalwart/sqlite,stalwart/postgres,stalwart/mysql
+      - run: cargo test --locked -p registry --test open_source_branding -p common --test runtime_settings
+      - run: cargo test --locked -p common --lib bundled_webadmin_tests
+      - run: cargo test --locked --workspace --no-fail-fast
+      - run: cargo test --locked -p coordinator --features zenoh --lib
+      - run: cargo test --locked --manifest-path vendor/zenoh-transport/Cargo.toml --lib --features transport_compression common::batch::tests
       - run: python3 -m pip install requests
       - run: python3 -m unittest discover -s resources/scripts/tests
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: webui/package-lock.json
       - run: npm ci --prefix webui
       - run: webui/node_modules/.bin/playwright install --with-deps chromium
-      - run: cargo build -p stalwart --no-default-features --features sqlite
+      - run: cargo build --locked -p stalwart --no-default-features --features sqlite
       - run: python3 resources/scripts/test_open_source_server.py --bootstrap
       - run: python3 resources/scripts/test_open_source_server.py --browser
+      - run: python3 resources/scripts/test_open_source_server.py --passkeys
+      - run: git diff --exit-code

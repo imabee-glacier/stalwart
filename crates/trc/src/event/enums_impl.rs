@@ -394,24 +394,6 @@ impl EventType {
             b"outgoing-report.no-recipients-found" => EventType::OutgoingReport(OutgoingReportEvent::NoRecipientsFound),
             b"outgoing-report.locked" => EventType::OutgoingReport(OutgoingReportEvent::Locked),
             b"outgoing-report.max-size-exceeded" => EventType::OutgoingReport(OutgoingReportEvent::MaxSizeExceeded),
-            b"pop3.connection-start" => EventType::Pop3(Pop3Event::ConnectionStart),
-            b"pop3.connection-end" => EventType::Pop3(Pop3Event::ConnectionEnd),
-            b"pop3.delete" => EventType::Pop3(Pop3Event::Delete),
-            b"pop3.reset" => EventType::Pop3(Pop3Event::Reset),
-            b"pop3.quit" => EventType::Pop3(Pop3Event::Quit),
-            b"pop3.fetch" => EventType::Pop3(Pop3Event::Fetch),
-            b"pop3.list" => EventType::Pop3(Pop3Event::List),
-            b"pop3.list-message" => EventType::Pop3(Pop3Event::ListMessage),
-            b"pop3.uidl" => EventType::Pop3(Pop3Event::Uidl),
-            b"pop3.uidl-message" => EventType::Pop3(Pop3Event::UidlMessage),
-            b"pop3.stat" => EventType::Pop3(Pop3Event::Stat),
-            b"pop3.noop" => EventType::Pop3(Pop3Event::Noop),
-            b"pop3.capabilities" => EventType::Pop3(Pop3Event::Capabilities),
-            b"pop3.start-tls" => EventType::Pop3(Pop3Event::StartTls),
-            b"pop3.utf8" => EventType::Pop3(Pop3Event::Utf8),
-            b"pop3.error" => EventType::Pop3(Pop3Event::Error),
-            b"pop3.raw-input" => EventType::Pop3(Pop3Event::RawInput),
-            b"pop3.raw-output" => EventType::Pop3(Pop3Event::RawOutput),
             b"push-subscription.success" => EventType::PushSubscription(PushSubscriptionEvent::Success),
             b"push-subscription.error" => EventType::PushSubscription(PushSubscriptionEvent::Error),
             b"push-subscription.not-found" => EventType::PushSubscription(PushSubscriptionEvent::NotFound),
@@ -1190,24 +1172,6 @@ impl EventType {
             EventType::OutgoingReport(OutgoingReportEvent::MaxSizeExceeded) => {
                 "outgoing-report.max-size-exceeded"
             }
-            EventType::Pop3(Pop3Event::ConnectionStart) => "pop3.connection-start",
-            EventType::Pop3(Pop3Event::ConnectionEnd) => "pop3.connection-end",
-            EventType::Pop3(Pop3Event::Delete) => "pop3.delete",
-            EventType::Pop3(Pop3Event::Reset) => "pop3.reset",
-            EventType::Pop3(Pop3Event::Quit) => "pop3.quit",
-            EventType::Pop3(Pop3Event::Fetch) => "pop3.fetch",
-            EventType::Pop3(Pop3Event::List) => "pop3.list",
-            EventType::Pop3(Pop3Event::ListMessage) => "pop3.list-message",
-            EventType::Pop3(Pop3Event::Uidl) => "pop3.uidl",
-            EventType::Pop3(Pop3Event::UidlMessage) => "pop3.uidl-message",
-            EventType::Pop3(Pop3Event::Stat) => "pop3.stat",
-            EventType::Pop3(Pop3Event::Noop) => "pop3.noop",
-            EventType::Pop3(Pop3Event::Capabilities) => "pop3.capabilities",
-            EventType::Pop3(Pop3Event::StartTls) => "pop3.start-tls",
-            EventType::Pop3(Pop3Event::Utf8) => "pop3.utf8",
-            EventType::Pop3(Pop3Event::Error) => "pop3.error",
-            EventType::Pop3(Pop3Event::RawInput) => "pop3.raw-input",
-            EventType::Pop3(Pop3Event::RawOutput) => "pop3.raw-output",
             EventType::PushSubscription(PushSubscriptionEvent::Success) => {
                 "push-subscription.success"
             }
@@ -1951,24 +1915,6 @@ impl EventType {
             EventType::OutgoingReport(OutgoingReportEvent::NoRecipientsFound) => 322,
             EventType::OutgoingReport(OutgoingReportEvent::Locked) => 321,
             EventType::OutgoingReport(OutgoingReportEvent::MaxSizeExceeded) => 54,
-            EventType::Pop3(Pop3Event::ConnectionStart) => 332,
-            EventType::Pop3(Pop3Event::ConnectionEnd) => 331,
-            EventType::Pop3(Pop3Event::Delete) => 333,
-            EventType::Pop3(Pop3Event::Reset) => 342,
-            EventType::Pop3(Pop3Event::Quit) => 339,
-            EventType::Pop3(Pop3Event::Fetch) => 335,
-            EventType::Pop3(Pop3Event::List) => 336,
-            EventType::Pop3(Pop3Event::ListMessage) => 337,
-            EventType::Pop3(Pop3Event::Uidl) => 345,
-            EventType::Pop3(Pop3Event::UidlMessage) => 346,
-            EventType::Pop3(Pop3Event::Stat) => 344,
-            EventType::Pop3(Pop3Event::Noop) => 338,
-            EventType::Pop3(Pop3Event::Capabilities) => 330,
-            EventType::Pop3(Pop3Event::StartTls) => 343,
-            EventType::Pop3(Pop3Event::Utf8) => 347,
-            EventType::Pop3(Pop3Event::Error) => 334,
-            EventType::Pop3(Pop3Event::RawInput) => 340,
-            EventType::Pop3(Pop3Event::RawOutput) => 341,
             EventType::PushSubscription(PushSubscriptionEvent::Success) => 357,
             EventType::PushSubscription(PushSubscriptionEvent::Error) => 355,
             EventType::PushSubscription(PushSubscriptionEvent::NotFound) => 356,
@@ -2700,24 +2646,6 @@ impl EventType {
             54 => Some(EventType::OutgoingReport(
                 OutgoingReportEvent::MaxSizeExceeded,
             )),
-            332 => Some(EventType::Pop3(Pop3Event::ConnectionStart)),
-            331 => Some(EventType::Pop3(Pop3Event::ConnectionEnd)),
-            333 => Some(EventType::Pop3(Pop3Event::Delete)),
-            342 => Some(EventType::Pop3(Pop3Event::Reset)),
-            339 => Some(EventType::Pop3(Pop3Event::Quit)),
-            335 => Some(EventType::Pop3(Pop3Event::Fetch)),
-            336 => Some(EventType::Pop3(Pop3Event::List)),
-            337 => Some(EventType::Pop3(Pop3Event::ListMessage)),
-            345 => Some(EventType::Pop3(Pop3Event::Uidl)),
-            346 => Some(EventType::Pop3(Pop3Event::UidlMessage)),
-            344 => Some(EventType::Pop3(Pop3Event::Stat)),
-            338 => Some(EventType::Pop3(Pop3Event::Noop)),
-            330 => Some(EventType::Pop3(Pop3Event::Capabilities)),
-            343 => Some(EventType::Pop3(Pop3Event::StartTls)),
-            347 => Some(EventType::Pop3(Pop3Event::Utf8)),
-            334 => Some(EventType::Pop3(Pop3Event::Error)),
-            340 => Some(EventType::Pop3(Pop3Event::RawInput)),
-            341 => Some(EventType::Pop3(Pop3Event::RawOutput)),
             357 => Some(EventType::PushSubscription(PushSubscriptionEvent::Success)),
             355 => Some(EventType::PushSubscription(PushSubscriptionEvent::Error)),
             356 => Some(EventType::PushSubscription(PushSubscriptionEvent::NotFound)),
@@ -3334,8 +3262,6 @@ impl EventType {
             EventType::Network(NetworkEvent::WriteError) => Level::Trace,
             EventType::Network(NetworkEvent::FlushError) => Level::Trace,
             EventType::Network(NetworkEvent::Closed) => Level::Trace,
-            EventType::Pop3(Pop3Event::RawInput) => Level::Trace,
-            EventType::Pop3(Pop3Event::RawOutput) => Level::Trace,
             EventType::PushSubscription(PushSubscriptionEvent::Success) => Level::Trace,
             EventType::Smtp(SmtpEvent::RawInput) => Level::Trace,
             EventType::Smtp(SmtpEvent::RawOutput) => Level::Trace,
@@ -3931,24 +3857,6 @@ impl EventType {
             EventType::OutgoingReport(OutgoingReportEvent::MaxSizeExceeded) => {
                 "Report size exceeds maximum"
             }
-            EventType::Pop3(Pop3Event::ConnectionStart) => "POP3 connection started",
-            EventType::Pop3(Pop3Event::ConnectionEnd) => "POP3 connection ended",
-            EventType::Pop3(Pop3Event::Delete) => "POP3 DELETE command",
-            EventType::Pop3(Pop3Event::Reset) => "POP3 RESET command",
-            EventType::Pop3(Pop3Event::Quit) => "POP3 QUIT command",
-            EventType::Pop3(Pop3Event::Fetch) => "POP3 FETCH command",
-            EventType::Pop3(Pop3Event::List) => "POP3 LIST command",
-            EventType::Pop3(Pop3Event::ListMessage) => "POP3 LIST specific message command",
-            EventType::Pop3(Pop3Event::Uidl) => "POP3 UIDL command",
-            EventType::Pop3(Pop3Event::UidlMessage) => "POP3 UIDL specific message command",
-            EventType::Pop3(Pop3Event::Stat) => "POP3 STAT command",
-            EventType::Pop3(Pop3Event::Noop) => "POP3 NOOP command",
-            EventType::Pop3(Pop3Event::Capabilities) => "POP3 CAPABILITIES command",
-            EventType::Pop3(Pop3Event::StartTls) => "POP3 STARTTLS command",
-            EventType::Pop3(Pop3Event::Utf8) => "POP3 UTF8 command",
-            EventType::Pop3(Pop3Event::Error) => "POP3 error occurred",
-            EventType::Pop3(Pop3Event::RawInput) => "Raw POP3 input received",
-            EventType::Pop3(Pop3Event::RawOutput) => "Raw POP3 output sent",
             EventType::PushSubscription(PushSubscriptionEvent::Success) => {
                 "Push subscription successful"
             }
@@ -4451,24 +4359,6 @@ impl EventType {
             EventType::Network(NetworkEvent::Closed) => "Network error",
             EventType::Network(NetworkEvent::ProxyError) => "Network error",
             EventType::Network(NetworkEvent::SetOptError) => "Network error",
-            EventType::Pop3(Pop3Event::ConnectionStart) => "POP3 error",
-            EventType::Pop3(Pop3Event::ConnectionEnd) => "POP3 error",
-            EventType::Pop3(Pop3Event::Delete) => "POP3 error",
-            EventType::Pop3(Pop3Event::Reset) => "POP3 error",
-            EventType::Pop3(Pop3Event::Quit) => "POP3 error",
-            EventType::Pop3(Pop3Event::Fetch) => "POP3 error",
-            EventType::Pop3(Pop3Event::List) => "POP3 error",
-            EventType::Pop3(Pop3Event::ListMessage) => "POP3 error",
-            EventType::Pop3(Pop3Event::Uidl) => "POP3 error",
-            EventType::Pop3(Pop3Event::UidlMessage) => "POP3 error",
-            EventType::Pop3(Pop3Event::Stat) => "POP3 error",
-            EventType::Pop3(Pop3Event::Noop) => "POP3 error",
-            EventType::Pop3(Pop3Event::Capabilities) => "POP3 error",
-            EventType::Pop3(Pop3Event::StartTls) => "POP3 error",
-            EventType::Pop3(Pop3Event::Utf8) => "POP3 error",
-            EventType::Pop3(Pop3Event::Error) => "POP3 error",
-            EventType::Pop3(Pop3Event::RawInput) => "POP3 error",
-            EventType::Pop3(Pop3Event::RawOutput) => "POP3 error",
             EventType::Resource(ResourceEvent::NotFound) => "Not found",
             EventType::Resource(ResourceEvent::BadParameters) => "Bad parameters",
             EventType::Resource(ResourceEvent::Error) => "Resource error",
@@ -4989,8 +4879,6 @@ impl EventType {
             EventType::OutgoingReport(OutgoingReportEvent::NoRecipientsFound) => {
                 "stalwart.outgoing_report.no_recipients_found"
             }
-            EventType::Pop3(Pop3Event::ConnectionStart) => "stalwart.pop3.connection_start",
-            EventType::Pop3(Pop3Event::ConnectionEnd) => "stalwart.pop3.connection_end",
             EventType::PushSubscription(PushSubscriptionEvent::Success) => {
                 "stalwart.push_subscription.success"
             }
@@ -5669,8 +5557,6 @@ impl EventType {
             EventType::OutgoingReport(OutgoingReportEvent::NoRecipientsFound) => {
                 "stalwart_outgoing_report_no_recipients_found_total"
             }
-            EventType::Pop3(Pop3Event::ConnectionStart) => "stalwart_pop3_connection_start_total",
-            EventType::Pop3(Pop3Event::ConnectionEnd) => "stalwart_pop3_connection_end_total",
             EventType::PushSubscription(PushSubscriptionEvent::Success) => {
                 "stalwart_push_subscription_success_total"
             }
@@ -6318,24 +6204,6 @@ impl EventType {
             EventType::OutgoingReport(OutgoingReportEvent::NoRecipientsFound),
             EventType::OutgoingReport(OutgoingReportEvent::Locked),
             EventType::OutgoingReport(OutgoingReportEvent::MaxSizeExceeded),
-            EventType::Pop3(Pop3Event::ConnectionStart),
-            EventType::Pop3(Pop3Event::ConnectionEnd),
-            EventType::Pop3(Pop3Event::Delete),
-            EventType::Pop3(Pop3Event::Reset),
-            EventType::Pop3(Pop3Event::Quit),
-            EventType::Pop3(Pop3Event::Fetch),
-            EventType::Pop3(Pop3Event::List),
-            EventType::Pop3(Pop3Event::ListMessage),
-            EventType::Pop3(Pop3Event::Uidl),
-            EventType::Pop3(Pop3Event::UidlMessage),
-            EventType::Pop3(Pop3Event::Stat),
-            EventType::Pop3(Pop3Event::Noop),
-            EventType::Pop3(Pop3Event::Capabilities),
-            EventType::Pop3(Pop3Event::StartTls),
-            EventType::Pop3(Pop3Event::Utf8),
-            EventType::Pop3(Pop3Event::Error),
-            EventType::Pop3(Pop3Event::RawInput),
-            EventType::Pop3(Pop3Event::RawOutput),
             EventType::PushSubscription(PushSubscriptionEvent::Success),
             EventType::PushSubscription(PushSubscriptionEvent::Error),
             EventType::PushSubscription(PushSubscriptionEvent::NotFound),
@@ -6870,10 +6738,6 @@ impl MetricType {
             b"outgoing-report.not-found" => MetricType::OutgoingReportNotFound,
             b"outgoing-report.submission-error" => MetricType::OutgoingReportSubmissionError,
             b"outgoing-report.no-recipients-found" => MetricType::OutgoingReportNoRecipientsFound,
-            b"pop3.request-time" => MetricType::Pop3RequestTime,
-            b"pop3.active-connections" => MetricType::Pop3ActiveConnections,
-            b"pop3.connection-start" => MetricType::Pop3ConnectionStart,
-            b"pop3.connection-end" => MetricType::Pop3ConnectionEnd,
             b"push-subscription.success" => MetricType::PushSubscriptionSuccess,
             b"push-subscription.error" => MetricType::PushSubscriptionError,
             b"push-subscription.not-found" => MetricType::PushSubscriptionNotFound,
@@ -7302,10 +7166,6 @@ impl MetricType {
             MetricType::OutgoingReportNotFound => "outgoing-report.not-found",
             MetricType::OutgoingReportSubmissionError => "outgoing-report.submission-error",
             MetricType::OutgoingReportNoRecipientsFound => "outgoing-report.no-recipients-found",
-            MetricType::Pop3RequestTime => "pop3.request-time",
-            MetricType::Pop3ActiveConnections => "pop3.active-connections",
-            MetricType::Pop3ConnectionStart => "pop3.connection-start",
-            MetricType::Pop3ConnectionEnd => "pop3.connection-end",
             MetricType::PushSubscriptionSuccess => "push-subscription.success",
             MetricType::PushSubscriptionError => "push-subscription.error",
             MetricType::PushSubscriptionNotFound => "push-subscription.not-found",
@@ -7732,10 +7592,6 @@ impl MetricType {
             MetricType::OutgoingReportNotFound => 191,
             MetricType::OutgoingReportSubmissionError => 192,
             MetricType::OutgoingReportNoRecipientsFound => 193,
-            MetricType::Pop3RequestTime => 14,
-            MetricType::Pop3ActiveConnections => 19,
-            MetricType::Pop3ConnectionStart => 194,
-            MetricType::Pop3ConnectionEnd => 195,
             MetricType::PushSubscriptionSuccess => 197,
             MetricType::PushSubscriptionError => 198,
             MetricType::PushSubscriptionNotFound => 199,
@@ -8160,10 +8016,6 @@ impl MetricType {
             191 => Some(MetricType::OutgoingReportNotFound),
             192 => Some(MetricType::OutgoingReportSubmissionError),
             193 => Some(MetricType::OutgoingReportNoRecipientsFound),
-            14 => Some(MetricType::Pop3RequestTime),
-            19 => Some(MetricType::Pop3ActiveConnections),
-            194 => Some(MetricType::Pop3ConnectionStart),
-            195 => Some(MetricType::Pop3ConnectionEnd),
             197 => Some(MetricType::PushSubscriptionSuccess),
             198 => Some(MetricType::PushSubscriptionError),
             199 => Some(MetricType::PushSubscriptionNotFound),
@@ -8565,8 +8417,6 @@ impl MetricType {
             MetricType::OutgoingReportNotFound => 323,
             MetricType::OutgoingReportSubmissionError => 327,
             MetricType::OutgoingReportNoRecipientsFound => 322,
-            MetricType::Pop3ConnectionStart => 332,
-            MetricType::Pop3ConnectionEnd => 331,
             MetricType::PushSubscriptionSuccess => 357,
             MetricType::PushSubscriptionError => 355,
             MetricType::PushSubscriptionNotFound => 356,
@@ -8983,10 +8833,6 @@ impl MetricType {
             MetricType::OutgoingReportNotFound => "Report not found",
             MetricType::OutgoingReportSubmissionError => "Error submitting report",
             MetricType::OutgoingReportNoRecipientsFound => "No recipients found for report",
-            MetricType::Pop3RequestTime => "POP3 connection duration",
-            MetricType::Pop3ActiveConnections => "Active POP3 connections",
-            MetricType::Pop3ConnectionStart => "POP3 connection started",
-            MetricType::Pop3ConnectionEnd => "POP3 connection ended",
             MetricType::PushSubscriptionSuccess => "Push subscription successful",
             MetricType::PushSubscriptionError => "Push subscription error",
             MetricType::PushSubscriptionNotFound => "Push subscription not found",
@@ -9180,7 +9026,6 @@ impl MetricType {
             MetricType::DeliveryActiveConnections
             | MetricType::HttpActiveConnections
             | MetricType::ImapActiveConnections
-            | MetricType::Pop3ActiveConnections
             | MetricType::SieveActiveConnections
             | MetricType::SmtpActiveConnections => "connections",
             MetricType::AcmeAuthError
@@ -9390,8 +9235,6 @@ impl MetricType {
             | MetricType::OutgoingReportNotFound
             | MetricType::OutgoingReportSubmissionError
             | MetricType::OutgoingReportNoRecipientsFound
-            | MetricType::Pop3ConnectionStart
-            | MetricType::Pop3ConnectionEnd
             | MetricType::PushSubscriptionSuccess
             | MetricType::PushSubscriptionError
             | MetricType::PushSubscriptionNotFound
@@ -9560,7 +9403,6 @@ impl MetricType {
             | MetricType::HttpRequestTime
             | MetricType::ImapRequestTime
             | MetricType::MessageIngestTime
-            | MetricType::Pop3RequestTime
             | MetricType::SearchIndexIndexTime
             | MetricType::SieveRequestTime
             | MetricType::SmtpRequestTime
@@ -9613,8 +9455,6 @@ impl MetricType {
             MetricType::MessageAuthenticatedSize => "stalwart.message.authenticated_size",
             MetricType::MessageIngestTime => "stalwart.message_ingest.time",
             MetricType::OutgoingReportSize => "stalwart.outgoing_report.size",
-            MetricType::Pop3RequestTime => "stalwart.pop3.request_time",
-            MetricType::Pop3ActiveConnections => "stalwart.pop3.active_connections",
             MetricType::QueueCount => "stalwart.queue.messages",
             MetricType::SearchIndexIndexTime => "stalwart.search_index.index_time",
             MetricType::SearchIndexPendingEmail => "stalwart.search_index.pending_email",
@@ -9673,8 +9513,6 @@ impl MetricType {
             MetricType::MessageAuthenticatedSize => "By",
             MetricType::MessageIngestTime => "s",
             MetricType::OutgoingReportSize => "By",
-            MetricType::Pop3RequestTime => "s",
-            MetricType::Pop3ActiveConnections => "{connection}",
             MetricType::QueueCount => "{message}",
             MetricType::SearchIndexIndexTime => "s",
             MetricType::SearchIndexPendingEmail => "{document}",
@@ -9733,8 +9571,6 @@ impl MetricType {
             MetricType::MessageAuthenticatedSize => "stalwart_message_authenticated_size_bytes",
             MetricType::MessageIngestTime => "stalwart_message_ingest_time_seconds",
             MetricType::OutgoingReportSize => "stalwart_outgoing_report_size_bytes",
-            MetricType::Pop3RequestTime => "stalwart_pop3_request_time_seconds",
-            MetricType::Pop3ActiveConnections => "stalwart_pop3_active_connections",
             MetricType::QueueCount => "stalwart_queue_messages",
             MetricType::SearchIndexIndexTime => "stalwart_search_index_index_time_seconds",
             MetricType::SearchIndexPendingEmail => "stalwart_search_index_pending_email",
@@ -9793,8 +9629,6 @@ impl MetricType {
             MetricType::MessageAuthenticatedSize => "bytes",
             MetricType::MessageIngestTime => "seconds",
             MetricType::OutgoingReportSize => "bytes",
-            MetricType::Pop3RequestTime => "seconds",
-            MetricType::Pop3ActiveConnections => "",
             MetricType::QueueCount => "",
             MetricType::SearchIndexIndexTime => "seconds",
             MetricType::SearchIndexPendingEmail => "",
@@ -10068,10 +9902,6 @@ impl MetricType {
             MetricType::OutgoingReportNotFound,
             MetricType::OutgoingReportSubmissionError,
             MetricType::OutgoingReportNoRecipientsFound,
-            MetricType::Pop3RequestTime,
-            MetricType::Pop3ActiveConnections,
-            MetricType::Pop3ConnectionStart,
-            MetricType::Pop3ConnectionEnd,
             MetricType::PushSubscriptionSuccess,
             MetricType::PushSubscriptionError,
             MetricType::PushSubscriptionNotFound,

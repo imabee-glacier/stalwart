@@ -15,7 +15,6 @@ use common::{BuildServer, config::server::ServerProtocol, manager::boot::BootMan
 use http::HttpSessionManager;
 use imap::core::ImapSessionManager;
 use managesieve::core::ManageSieveSessionManager;
-use pop3::Pop3SessionManager;
 use services::{StartServices, broadcast::subscriber::spawn_broadcast_subscriber};
 use smtp::{StartQueueManager, core::SmtpSessionManager};
 use std::{process::ExitCode, time::Duration};
@@ -104,12 +103,6 @@ async fn async_main() -> ExitCode {
             ),
             ServerProtocol::Imap => server.spawn(
                 ImapSessionManager::new(init.inner.clone()),
-                init.inner.clone(),
-                acceptor,
-                shutdown_rx,
-            ),
-            ServerProtocol::Pop3 => server.spawn(
-                Pop3SessionManager::new(init.inner.clone()),
                 init.inner.clone(),
                 acceptor,
                 shutdown_rx,

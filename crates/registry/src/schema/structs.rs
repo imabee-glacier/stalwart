@@ -1019,6 +1019,7 @@ pub enum Credential {
     Password(PasswordCredential),
     AppPassword(SecondaryCredential),
     ApiKey(SecondaryCredential),
+    Passkey(PasskeyCredential),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -4525,6 +4526,20 @@ pub struct OtpAuth {
     pub otp_url: Option<String>,
 }
 
+/// Verified WebAuthn credentials are written only by the passkey ceremony handler.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct PasskeyCredential {
+    pub credential_id: Id,
+    pub name: String,
+    pub rp_id: String,
+    pub user_handle: String,
+    pub credential_key: String,
+    pub public_key: String,
+    pub created_at: UTCDateTime,
+    pub last_used_at: Option<UTCDateTime>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PasswordCredential {
@@ -6617,6 +6632,9 @@ pub enum TracingStore {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UserAccount {
+    /// Server-managed epoch. Rotating this revokes OAuth sessions after passkey changes.
+    #[serde(skip)]
+    pub credential_revision: u64,
     pub name: String,
     #[serde(rename = "domainId")]
     pub domain_id: Id,

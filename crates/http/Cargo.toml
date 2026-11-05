@@ -4,6 +4,8 @@ version = "1.0.3"
 edition = "2024"
 
 [dependencies]
+webauthn-rs-proto = "=0.6.2"
+webauthn-rs = { version = "=0.6.2", default-features = false, features = ["conditional-ui", "danger-allow-state-serialisation"] }
 store = { path = "../store" }
 common = { path =  "../common" }
 utils = { path =  "../utils" }

@@ -19,9 +19,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     g++-x86-64-linux-gnu binutils-x86-64-linux-gnu
 RUN rustup target add "$(cat /target.txt)"
 COPY --from=planner /recipe.json /recipe.json
+COPY vendor/ vendor/
 RUN RUSTFLAGS="$(cat /flags.txt)" cargo chef cook --target "$(cat /target.txt)" --release --no-default-features --features "sqlite postgres mysql rocks s3 redis azure nats" --recipe-path /recipe.json
 COPY . .
-RUN RUSTFLAGS="$(cat /flags.txt)" cargo build --target "$(cat /target.txt)" --release -p stalwart --no-default-features --features "sqlite postgres mysql rocks s3 redis azure nats"
+RUN RUSTFLAGS="$(cat /flags.txt)" cargo build --locked --target "$(cat /target.txt)" --release -p stalwart --no-default-features --features "sqlite postgres mysql rocks s3 redis azure nats"
 RUN mv "/build/target/$(cat /target.txt)/release" "/output"
 
 FROM docker.io/debian:trixie-slim
@@ -38,7 +39,7 @@ RUN setcap 'cap_net_bind_service=+ep' /usr/local/bin/stalwart
 USER stalwart
 WORKDIR /var/lib/stalwart
 VOLUME ["/etc/stalwart", "/var/lib/stalwart"]
-EXPOSE	443 25 110 587 465 143 993 995 4190 8080
+EXPOSE	443 25 587 465 143 993 4190 8080
 ENV STALWART_HEALTHCHECK_URL=https://127.0.0.1:443/healthz/live
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -fsSk "$STALWART_HEALTHCHECK_URL" || curl -fsS http://127.0.0.1:8080/healthz/live || exit 1

@@ -103,6 +103,7 @@ impl Server {
 
                 for credential in account.credentials {
                     match credential {
+                        structs::Credential::Passkey(_) => {}
                         structs::Credential::Password(credential) => {
                             credential_version = xxh3::xxh3_64(credential.secret.as_bytes()).max(1);
 
@@ -155,6 +156,18 @@ impl Server {
                             }
                         }
                     }
+                }
+
+                if account.credential_revision != 0 {
+                    let mut epoch = [0u8; 16];
+                    epoch[..8].copy_from_slice(&credential_version.to_le_bytes());
+                    epoch[8..].copy_from_slice(&account.credential_revision.to_le_bytes());
+                    credential_version = u64::from_le_bytes(
+                        store::blake3::hash(&epoch).as_bytes()[..8]
+                            .try_into()
+                            .unwrap(),
+                    )
+                    .max(1);
                 }
 
                 Ok(AccessTokenInner {
@@ -985,7 +998,7 @@ impl AccessTokenInner {
             // SPDX-SnippetEnd
             member_of: Default::default(),
             access_to: Default::default(),
-            scopes: Box::new([AccessScope::new(Permissions::all(), u32::MAX)]),
+            scopes: Box::new([AccessScope::new(Permissions::all_active(), u32::MAX)]),
             limits: Default::default(),
             revision: Default::default(),
             revision_account: Default::default(),

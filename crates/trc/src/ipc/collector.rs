@@ -72,8 +72,6 @@ const HTTP_CONN_START: usize = EventType::Http(HttpEvent::ConnectionStart).to_id
 const HTTP_CONN_END: usize = EventType::Http(HttpEvent::ConnectionEnd).to_id() as usize;
 const IMAP_CONN_START: usize = EventType::Imap(ImapEvent::ConnectionStart).to_id() as usize;
 const IMAP_CONN_END: usize = EventType::Imap(ImapEvent::ConnectionEnd).to_id() as usize;
-const POP3_CONN_START: usize = EventType::Pop3(Pop3Event::ConnectionStart).to_id() as usize;
-const POP3_CONN_END: usize = EventType::Pop3(Pop3Event::ConnectionEnd).to_id() as usize;
 const SMTP_CONN_START: usize = EventType::Smtp(SmtpEvent::ConnectionStart).to_id() as usize;
 const SMTP_CONN_END: usize = EventType::Smtp(SmtpEvent::ConnectionEnd).to_id() as usize;
 const MANAGE_SIEVE_CONN_START: usize =
@@ -323,7 +321,6 @@ impl Dispatcher {
         let event = match event_id {
             HTTP_CONN_START
             | IMAP_CONN_START
-            | POP3_CONN_START
             | SMTP_CONN_START
             | MANAGE_SIEVE_CONN_START
             | EV_ATTEMPT_START => {
@@ -336,7 +333,6 @@ impl Dispatcher {
             }
             HTTP_CONN_END
             | IMAP_CONN_END
-            | POP3_CONN_END
             | SMTP_CONN_END
             | MANAGE_SIEVE_CONN_END
             | EV_ATTEMPT_END => {

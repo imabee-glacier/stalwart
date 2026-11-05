@@ -33,6 +33,14 @@ describe('permission-based access without editions', () => {
             expect(resolveItemActions(schema, action, 'sysAccount', checks)).toHaveLength(permissions.length);
         }
     });
+    it('exposes passkeys through the account credential permission', () => {
+        for (const permissions of [[], ['sysAccountPasswordGet'], ['sysAccountPasswordUpdate']]) {
+            const checks = createPermissionCheckers(permissions);
+            expect(isLinkAccessible(schema, 'CustomComponent/Passkeys', checks.canGet, checks.hasPermission)).toBe(
+                permissions.includes('sysAccountPasswordGet'),
+            );
+        }
+    });
     it('has no activation form or edition feature metadata in the shipped schema', () => {
         expect(schema.fields['x:Branding'].properties).toHaveProperty('logo');
         expect(Object.keys(schema.fields['x:Branding'].properties)).toEqual(['logo']);

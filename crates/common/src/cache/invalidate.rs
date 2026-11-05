@@ -395,7 +395,11 @@ impl CacheInvalidationBuilder {
         current: &List<Credential>,
         new: &List<Credential>,
     ) {
-        if password_secret(current) != password_secret(new)
+        let new_passkeys = passkey_ids(new);
+        if (password_secret(current) != password_secret(new)
+            || passkey_ids(current)
+                .iter()
+                .any(|key| !new_passkeys.contains(key)))
             && !self.revoke_oauth_grants.contains(&account_id)
         {
             self.revoke_oauth_grants.push(account_id);
@@ -812,3 +816,18 @@ fn password_secret(credentials: &List<Credential>) -> Option<&str> {
 #[rustfmt::skip]
 #[path = "../../../../../stalwart-tests/unit/common/src/cache/invalidate/tests.rs"]
 mod tests;
+
+fn passkey_ids(credentials: &List<Credential>) -> Vec<(&str, &str)> {
+    let mut ids = credentials
+        .iter()
+        .filter_map(|c| {
+            if let Credential::Passkey(c) = c {
+                Some((c.rp_id.as_str(), c.credential_key.as_str()))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+    ids.sort_unstable();
+    ids
+}

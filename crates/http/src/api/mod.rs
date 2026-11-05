@@ -75,6 +75,7 @@ impl ManagementApi for Server {
                 self.is_http_anonymous_request_allowed(session.remote_ip)
                     .await?;
                 self.handle_login_request(
+                    req,
                     session,
                     request_origin(req, session),
                     body.ok_or_else(|| trc::LimitEvent::SizeRequest.into_err())?,
@@ -123,6 +124,11 @@ impl ManagementApi for Server {
                 } else {
                     Err(trc::ResourceEvent::NotFound.into_err())
                 }
+            }
+            "account" if path.get(1).copied() == Some("passkeys") => {
+                use crate::auth::passkey::PasskeyApi;
+                self.handle_passkey_request(req, session, &path[2..], body)
+                    .await
             }
             "account" => {
                 // Authenticate request
