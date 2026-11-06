@@ -35,6 +35,18 @@ pub const MAX_OAUTH_GRANTS: usize = 256;
 pub const RECOVERY_ADMIN_GRANT_ID: u64 = 1 << 62;
 const MAX_WRITE_ATTEMPTS: usize = 3;
 
+/// How long after a rotation the superseded refresh token is still honoured.
+///
+/// Rotation is two-phase: presenting generation `n` issues `n + 1` and marks
+/// the grant pending until `n + 1` is seen. If the response carrying `n + 1`
+/// is lost, the client retries with `n` and gets `n + 1` again. That retry is
+/// what this bounds. Without a bound, anyone else holding `n` could keep
+/// fetching `n + 1` for as long as the real client stayed quiet, and the two
+/// could then advance in lockstep without ever presenting a stale token,
+/// which is the only thing reuse detection notices. Past the window, `n` is
+/// treated as the replay it most likely is and the grant is revoked.
+pub const ROTATION_RETRY_WINDOW_SECS: u64 = 60;
+
 pub struct NewOAuthGrant<'x> {
     pub account_id: u32,
     pub client_id: &'x str,
@@ -73,17 +85,26 @@ impl StoredOAuthGrant {
     }
 
     pub fn is_current(&self, presented: u64) -> bool {
+        self.is_current_at(presented, now())
+    }
+
+    pub fn is_current_at(&self, presented: u64, now: u64) -> bool {
         matches!(
-            self.rotation(presented),
+            self.rotation(presented, now),
             RotationStep::Retry | RotationStep::Rotate { .. }
         )
     }
 
-    fn rotation(&self, presented: u64) -> RotationStep {
+    fn rotation(&self, presented: u64, now: u64) -> RotationStep {
         let current = self.grant.generation;
         if presented == current {
             if self.grant.pending {
-                RotationStep::Retry
+                let rotated_at = u64::try_from(self.grant.last_used_at.timestamp()).unwrap_or(0);
+                if now.saturating_sub(rotated_at) <= ROTATION_RETRY_WINDOW_SECS {
+                    RotationStep::Retry
+                } else {
+                    RotationStep::Replay
+                }
             } else {
                 RotationStep::Rotate {
                     stored: current,
@@ -423,7 +444,9 @@ impl Server {
         presented_generation: u64,
     ) -> trc::Result<GrantRotation> {
         for _ in 0..MAX_WRITE_ATTEMPTS {
-            let (stored_generation, next_generation) = match stored.rotation(presented_generation) {
+            let (stored_generation, next_generation) = match stored
+                .rotation(presented_generation, now())
+            {
                 RotationStep::Retry => {
                     return Ok(GrantRotation::Issue {
                         next: TokenGrant {
@@ -439,7 +462,7 @@ impl Server {
                         Auth(trc::AuthEvent::Failed),
                         AccountId = stored.account_id(),
                         Id = stored.id,
-                        Reason = "Superseded refresh token reused, revoking OAuth grant",
+                        Reason = "Superseded refresh token reused or retried too late, revoking OAuth grant",
                     );
                     let mut invalidator = CacheInvalidationBuilder::default();
                     self.delete_oauth_grant(stored, GrantDeletion::Unconditional, &mut invalidator)
