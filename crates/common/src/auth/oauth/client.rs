@@ -336,8 +336,21 @@ impl ResolvedClient {
         }
     }
 
+    /// Consent is skipped for applications this server hosts, and for clients
+    /// a server administrator registered and marked first-party: the operator's
+    /// own front ends, where asking the person to approve the service they are
+    /// signing in to is noise. A tenant's client never qualifies, whatever it
+    /// says about itself. First-party changes only the question, never the
+    /// answer: the grant still holds just the scopes the client is registered
+    /// for.
     pub fn requires_consent(&self) -> bool {
-        !matches!(self, ResolvedClient::Application(_))
+        match self {
+            ResolvedClient::Application(_) => false,
+            ResolvedClient::Registered(client) | ResolvedClient::RegisteredApplication(client) => {
+                !(client.first_party && client.member_tenant_id.is_none())
+            }
+            ResolvedClient::Stateless(_) | ResolvedClient::Cimd(_) => true,
+        }
     }
 
     pub fn is_verified(&self) -> bool {

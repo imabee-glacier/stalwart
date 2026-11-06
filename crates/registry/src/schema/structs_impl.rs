@@ -51268,7 +51268,7 @@ impl Pickle for OAuthClient {
         if self.logo.is_some() {
             bitmap |= 1 << 4;
         }
-        let block = crate::pickle::begin_block(out, 13, 6, bitmap);
+        let block = crate::pickle::begin_block(out, 14, 6, bitmap);
         self.client_id.pickle(out);
         if let Some(value) = &self.description {
             value.pickle(out);
@@ -51296,6 +51296,7 @@ impl Pickle for OAuthClient {
         }
         self.scopes.pickle(out);
         self.grant_types.pickle(out);
+        self.first_party.pickle(out);
         crate::pickle::end_block(out, block);
     }
 
@@ -51392,6 +51393,11 @@ impl Pickle for OAuthClient {
                 OAuthGrantType::RefreshToken,
             ])
         };
+        let field13: bool = if block.has(13) {
+            Pickle::unpickle(stream)?
+        } else {
+            Default::default()
+        };
         stream.close_block(block);
         Some(Self {
             client_id: field0,
@@ -51410,6 +51416,7 @@ impl Pickle for OAuthClient {
             logo: field9,
             scopes: field11,
             grant_types: field12,
+            first_party: field13,
         })
     }
 }
@@ -51436,6 +51443,7 @@ impl Default for OAuthClient {
                 OAuthGrantType::AuthorizationCode,
                 OAuthGrantType::RefreshToken,
             ]),
+            first_party: Default::default(),
         }
     }
 }
@@ -51446,7 +51454,7 @@ impl IntoValue for OAuthClient {
     }
 
     fn into_value_with(self, opts: ValueOptions) -> JmapValue<'static> {
-        let mut map = jmap_tools::Map::with_capacity(14);
+        let mut map = jmap_tools::Map::with_capacity(15);
         map.insert_unchecked(Property::ClientId, self.client_id.into_value_with(opts));
         map.insert_unchecked(
             Property::Description,
@@ -51485,6 +51493,7 @@ impl IntoValue for OAuthClient {
         map.insert_unchecked(Property::Logo, self.logo.into_value_with(opts));
         map.insert_unchecked(Property::Scopes, self.scopes.into_value_with(opts));
         map.insert_unchecked(Property::GrantTypes, self.grant_types.into_value_with(opts));
+        map.insert_unchecked(Property::FirstParty, self.first_party.into_value_with(opts));
         JmapValue::Object(map)
     }
 }
@@ -51518,9 +51527,7 @@ impl RegistryJsonPropertyPatch for OAuthClient {
                 self.post_logout_redirect_uris.patch(pointer, value)
             }
             Some(Property::Logo) => self.logo.patch(pointer, value),
-            Some(property @ Property::FirstParty) => {
-                Ok(MaybeUnpatched::Unpatched { property, value })
-            }
+            Some(Property::FirstParty) => self.first_party.patch(pointer, value),
             Some(Property::Scopes) => self.scopes.patch(pointer, value),
             Some(Property::GrantTypes) => self.grant_types.patch(pointer, value),
             Some(Property::Type) => Ok(MaybeUnpatched::Unpatched {

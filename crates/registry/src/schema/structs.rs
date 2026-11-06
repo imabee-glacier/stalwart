@@ -4422,6 +4422,8 @@ pub struct OAuthClient {
     pub scopes: Map<OAuthScope>,
     #[serde(rename = "grantTypes")]
     pub grant_types: Map<OAuthGrantType>,
+    #[serde(rename = "firstParty")]
+    pub first_party: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
